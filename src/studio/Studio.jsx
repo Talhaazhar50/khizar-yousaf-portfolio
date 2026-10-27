@@ -10,12 +10,20 @@ import {
   SKILLS,
   projectsToHotspots,
 } from "./hotspots";
+import Reader from "./Reader.jsx";
 import "./Studio.css";
 
 const StudioScene = lazy(() => import("./StudioScene.jsx"));
+const PhoneDial = lazy(() => import("./PhoneDial.jsx"));
 
 const DISCOVER_KEY = "khizar_studio_discovered_v1";
 const LAMP_MODES = ["warm", "cool", "off"];
+// Digits on the phone that do something; the other numbers just dial.
+const DIALS = {
+  1: { label: "LinkedIn", href: CONTACT.linkedin },
+  2: { label: "Email", href: `mailto:${CONTACT.email}` },
+  3: { label: "Call", href: CONTACT.phoneHref },
+};
 
 const LOADER_BOOKS = [
   { c: "#2f5d50", h: "30px" },
@@ -50,6 +58,7 @@ export default function Studio() {
   const [booksUp, setBooksUp] = useState(0);
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
+  const [dial, setDial] = useState(null); // {n, id}: a number the phone is dialling
 
   const workHotspots = useMemo(() => projectsToHotspots(projects), [projects]);
   const hotspots = useMemo(
@@ -120,6 +129,46 @@ export default function Studio() {
       clearTimeout(done);
     };
   }, [reduce]);
+
+  const phoneOpen = active?.kind === "contact";
+
+  // Freeze the 3D room whenever something covers it, so the page on top gets the whole main thread.
+  // A book is the exception while it flies out (and back): the room has to draw that.
+  const workId = active?.kind === "work" ? active.id : null;
+  const [bookLanded, setBookLanded] = useState(false);
+  useEffect(() => {
+    if (!workId) return undefined;
+    const t = setTimeout(() => setBookLanded(true), 900);
+    return () => {
+      clearTimeout(t);
+      setBookLanded(false);
+    };
+  }, [workId]);
+  const covered = bookLanded || menuOpen || (active && active.kind !== "lamp" && active.kind !== "work");
+
+  function pressDigit(n) {
+    setDial((d) => d || { n });
+  }
+
+  function dialled(n) {
+    setDial(null);
+    const href = DIALS[n]?.href;
+    if (!href) return;
+    if (href.startsWith("http")) window.open(href, "_blank", "noopener,noreferrer");
+    else window.location.href = href;
+  }
+
+  useEffect(() => {
+    if (!phoneOpen) {
+      setDial(null);
+      return undefined;
+    }
+    const onKey = (e) => {
+      if (/^[0-9]$/.test(e.key) && !e.target.closest?.("input, textarea")) pressDigit(Number(e.key));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phoneOpen]);
 
   function markDiscovered(id) {
     setDiscovered((prev) => {
@@ -226,6 +275,8 @@ export default function Studio() {
           hotspots={hotspots}
           clients={clients}
           lampMode={lampMode}
+          activeId={activeId}
+          paused={!!covered}
           onSelect={openHotspot}
           ready={ready}
         />
@@ -365,7 +416,7 @@ export default function Studio() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {active && active.kind !== "lamp" ? (
+        {active && active.kind !== "lamp" && active.kind !== "work" ? (
           <>
             <motion.button
               type="button"
@@ -377,7 +428,7 @@ export default function Studio() {
               onClick={() => setActiveId(null)}
             />
             <motion.aside
-              className="studio-panel"
+              className={`studio-panel${phoneOpen ? " studio-panel--phone" : ""}`}
               role="dialog"
               aria-modal="true"
               aria-label={active.label}
@@ -400,29 +451,6 @@ export default function Studio() {
                   ×
                 </button>
               </div>
-
-              {active.kind === "work" && active.project ? (
-                <div className="studio-panel__body">
-                  <div className="studio-panel__media">
-                    <img
-                      src={active.project.image}
-                      alt={active.project.title}
-                      loading="lazy"
-                    />
-                  </div>
-                  <p>{active.project.tag}</p>
-                  {active.project.link ? (
-                    <a
-                      className="studio-cta"
-                      href={active.project.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      View project
-                    </a>
-                  ) : null}
-                </div>
-              ) : null}
 
               {active.kind === "about" ? (
                 <div className="studio-panel__body">
@@ -476,15 +504,28 @@ export default function Studio() {
               ) : null}
 
               {active.kind === "contact" ? (
-                <div className="studio-panel__body">
-                  <p>Branding, social systems, campaigns, or print — tell me what you need.</p>
-                  <div className="studio-links">
-                    <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
-                    <a href={CONTACT.phoneHref}>{CONTACT.phone}</a>
-                    <a href={CONTACT.linkedin} target="_blank" rel="noopener noreferrer">
-                      LinkedIn
-                    </a>
+                <div className="studio-panel__body studio-phone">
+                  <div className="studio-phone__stage">
+                    <Suspense fallback={null}>
+                      <PhoneDial request={dial} onPress={pressDigit} onDone={dialled} />
+                    </Suspense>
                   </div>
+                  <div className="studio-phone__side">
+                  <p>Branding, social systems, campaigns, or print — tell me what you need.</p>
+                  <p className="studio-phone__tip">
+                    Pick a number and the phone dials it for you (or press 1, 2 or 3). You can
+                    click the numbers on the dial, too.
+                  </p>
+                  <div className="studio-dials">
+                    {Object.entries(DIALS).map(([n, d]) => (
+                      <button key={n} type="button" onClick={() => pressDigit(Number(n))}>
+                        <span>{n}</span>
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                  <details className="studio-phone__write">
+                  <summary>Or send a message</summary>
                   <form className="studio-form" onSubmit={onSubmit}>
                     <label>
                       Name
@@ -503,6 +544,8 @@ export default function Studio() {
                     </button>
                     {status ? <p className="studio-form__status">{status}</p> : null}
                   </form>
+                  </details>
+                  </div>
                 </div>
               ) : null}
 
@@ -526,6 +569,17 @@ export default function Studio() {
           </>
         ) : null}
       </AnimatePresence>
+      {active?.kind === "work" && active.project ? (
+        <div
+          className="studio-book-wrap"
+          role="dialog"
+          aria-modal="true"
+          aria-label={active.label}
+          onClick={(e) => e.target === e.currentTarget && setActiveId(null)}
+        >
+          <Reader project={active.project} onClose={() => setActiveId(null)} />
+        </div>
+      ) : null}
 
       <AnimatePresence>
         {active?.kind === "lamp" ? (

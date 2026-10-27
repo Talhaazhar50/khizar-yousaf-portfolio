@@ -4,7 +4,7 @@
   --studio-muted: rgba(245, 233, 217, 0.82);
   --studio-gold: #ecc22a;
   --studio-accent: #d62300;
-  --studio-panel: rgba(28, 20, 16, 0.88);
+  --studio-panel: rgba(28, 20, 16, 0.97);
   --studio-line: rgba(245, 235, 220, 0.14);
   --studio-display: "Playfair Display", Georgia, serif;
   --studio-body: "Karla", system-ui, sans-serif;
@@ -161,9 +161,7 @@
   padding: 0 1.25rem;
   border-radius: 999px;
   border: 1px solid rgba(245, 233, 217, 0.28);
-  background: rgba(30, 29, 27, 0.55);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  background: rgba(30, 29, 27, 0.78);
   color: var(--studio-ink);
   font: inherit;
   font-weight: 600;
@@ -240,7 +238,6 @@
   padding: 0.75rem 1rem;
   border-radius: 14px;
   background: rgba(24, 18, 15, 0.82);
-  backdrop-filter: blur(18px);
   border: 1px solid var(--studio-line);
   color: var(--studio-ink);
   font-size: 0.92rem;
@@ -270,8 +267,7 @@
   position: absolute;
   inset: 0;
   z-index: 30;
-  background: rgba(10, 8, 6, 0.45);
-  backdrop-filter: blur(4px);
+  background: rgba(10, 8, 6, 0.6);
 }
 
 .studio-menu {
@@ -283,8 +279,6 @@
   height: 100%;
   padding: 1.25rem 1.25rem 2rem;
   background: var(--studio-panel);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
   border-left: 1px solid var(--studio-line);
   overflow: auto;
   box-shadow: -20px 0 60px rgba(0, 0, 0, 0.4);
@@ -371,8 +365,7 @@ a.studio-menu__item {
   position: absolute;
   inset: 0;
   z-index: 28;
-  background: rgba(8, 6, 5, 0.28);
-  backdrop-filter: blur(2px);
+  background: rgba(8, 6, 5, 0.55);
 }
 
 .studio-panel {
@@ -380,14 +373,14 @@ a.studio-menu__item {
   z-index: 29;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
+  translate: -50% -50%; /* not transform: motion owns that */
   width: min(560px, calc(100% - 1.5rem));
   max-height: min(82svh, 720px);
   overflow: auto;
   border-radius: 22px;
   background: rgba(36, 29, 23, 0.95);
   border: 1px solid var(--studio-line);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
   padding: 1.25rem 1.25rem 1.5rem;
 }
 
@@ -661,7 +654,7 @@ a.studio-menu__item {
     bottom: 0;
     left: 0;
     right: 0;
-    transform: none;
+    translate: none;
     width: 100%;
     max-height: 70svh;
     border-radius: 20px 20px 0 0;
@@ -687,5 +680,394 @@ a.studio-menu__item {
   .studio-canvas,
   .studio-loader__book {
     transition: none;
+  }
+}
+
+/* Work book: lands closed, the cover swings open, arrows turn the pages */
+.studio-book-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 29;
+  display: grid;
+  place-items: center;
+  padding: 1rem 1rem 4.5rem;
+  background: rgba(8, 6, 5, 0.62);
+}
+
+.studio-book {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 100%;
+  height: min(76svh, 640px);
+  aspect-ratio: 1.55;
+  max-width: 100%;
+  perspective: 2200px;
+  will-change: transform;
+}
+
+.studio-book > * {
+  grid-row: 1;
+  grid-column: 2;
+  min-width: 0;
+  min-height: 0;
+}
+
+.studio-book > .studio-book__left,
+.studio-book > .studio-book__leaf--left {
+  grid-column: 1;
+}
+
+.studio-book__page {
+  overflow: hidden;
+  background: #1a1410;
+}
+
+.studio-book__left {
+  border-radius: 8px 0 0 8px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.studio-book__page img,
+.studio-book__face > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+}
+
+.studio-book__page--text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.6rem;
+  height: 100%;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(90deg, #e2d4b8, #f6eedd 12%);
+  color: #3a2c20;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.studio-book__page--text h2 {
+  margin: 0;
+  font-family: var(--studio-display);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
+.studio-book__page--text p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.studio-book__page--text .studio-panel__eyebrow {
+  color: #8a6a1a;
+}
+
+.reader__meta {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.8rem 0 0;
+}
+
+.reader__meta div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.reader__meta dt {
+  font-weight: 700;
+}
+
+.reader__meta dt::after {
+  content: ":";
+}
+
+.reader__meta dd {
+  margin: 0;
+}
+
+.reader__list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  line-height: 1.7;
+}
+
+/* the first page's words arrive once the cover is open */
+.studio-book__page--text.is-intro > * {
+  animation: book-words 0.45s 1.45s both;
+}
+
+@keyframes book-words {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.studio-book__leaf {
+  position: relative;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.studio-book__leaf--left {
+  transform-origin: right center;
+}
+
+.studio-book__face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #1a1410;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.studio-book__face .studio-book__page--text {
+  box-shadow: none;
+}
+
+.studio-book__face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 9%);
+}
+
+.studio-book__leaf--right .studio-book__face--front {
+  border-radius: 0 8px 8px 0;
+}
+
+.studio-book__leaf--right .studio-book__face--back {
+  border-radius: 8px 0 0 8px;
+}
+
+.studio-book__leaf--left .studio-book__face--front {
+  border-radius: 8px 0 0 8px;
+}
+
+.studio-book__leaf--left .studio-book__face--back {
+  border-radius: 0 8px 8px 0;
+}
+
+.studio-book__face--back {
+  transform: rotateY(180deg);
+}
+
+.studio-book__face--back::after,
+.studio-book__leaf--left .studio-book__face--front::after {
+  background: linear-gradient(270deg, rgba(0, 0, 0, 0.35), transparent 9%);
+}
+
+.studio-book__leaf--left .studio-book__face--back::after {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 9%);
+}
+
+.reader__nav {
+  position: absolute;
+  bottom: 1.1rem;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  color: var(--studio-ink);
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+}
+
+.reader__nav button {
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 50%;
+  border: 1px solid var(--studio-line);
+  background: rgba(36, 29, 23, 0.7);
+  color: var(--studio-ink);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.reader__nav button:hover:not(:disabled) {
+  border-color: var(--studio-gold);
+  color: var(--studio-gold);
+}
+
+.reader__nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.studio-book__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(36, 29, 23, 0.6);
+}
+
+/* Phone panel: a 3D phone you can dial */
+@media (min-width: 721px) {
+  .studio-panel--phone {
+    width: min(960px, calc(100% - 1.5rem));
+  }
+}
+
+.studio-phone {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.studio-phone__stage {
+  height: min(420px, 52svh);
+}
+
+.studio-phone__tip {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.studio-dials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.studio-dials button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 1rem 0.35rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--studio-line);
+  background: transparent;
+  color: var(--studio-ink);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.studio-dials button:hover {
+  border-color: var(--studio-gold);
+  color: var(--studio-gold);
+}
+
+.studio-dials button span {
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  font-family: var(--studio-display);
+}
+
+.studio-phone__write {
+  margin-top: 1rem;
+}
+
+.studio-phone__write summary {
+  cursor: pointer;
+  font-weight: 650;
+  color: var(--studio-gold);
+}
+
+@media (max-width: 720px) {
+  /* small screens: no hinge, just the picture over the text */
+  .studio-book {
+    grid-template-columns: 1fr;
+    grid-template-rows: 38% 1fr;
+    aspect-ratio: auto;
+    height: min(78svh, 640px);
+    width: 100%;
+    transform: none !important;
+  }
+
+  .studio-book > *,
+  .studio-book > .studio-book__left {
+    grid-column: 1;
+  }
+
+  .studio-book__left {
+    grid-row: 1;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .studio-book__page--text {
+    grid-row: 2;
+    border-radius: 0 0 8px 8px;
+    overflow: auto;
+  }
+
+  .studio-phone {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-phone__stage {
+    height: 290px;
+  }
+}
+
+/* Book animations are CSS (compositor-driven), so a busy 3D room can't make them skip. */
+.studio-book-wrap {
+  animation: book-fade 0.25s 0.55s both;
+}
+
+.studio-book.is-opening {
+  animation: book-slide 0.8s 0.75s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+
+.studio-book__leaf {
+  animation: leaf-right 0.65s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+
+.studio-book__leaf--left {
+  animation-name: leaf-left;
+}
+
+.studio-book__leaf.is-cover {
+  animation-duration: 0.8s;
+  animation-delay: 0.75s;
+}
+
+@keyframes book-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes book-slide {
+  from {
+    transform: translateX(-25%);
+  }
+}
+
+@keyframes leaf-right {
+  from {
+    transform: rotateY(0);
+  }
+  to {
+    transform: rotateY(-180deg);
+  }
+}
+
+@keyframes leaf-left {
+  from {
+    transform: rotateY(0);
+  }
+  to {
+    transform: rotateY(180deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .studio-book-wrap {
+    animation-delay: 0.3s;
   }
 }

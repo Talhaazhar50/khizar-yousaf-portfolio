@@ -215,9 +215,9 @@ export const FALLBACK_CLIENTS = [
 export const BOOK_SLOTS = [
   { position: [0.66, 1.73, 0], colors: ["#8f9e7a", "#e9dcc0", "#c98a5e", "#e3a57a", "#7f8f6a", "#d9c7a0", "#b5574b"], h: 0.66 },
   { position: [0.66, 0.88, 0], colors: ["#a9c79a", "#e9dcc0", "#7fae78", "#cfe0b8", "#9cc48f", "#6f9a5f"], h: 0.66 },
-  { position: [0.66, 0.05, 0], colors: ["#6f4a52", "#2f3b4a", "#3d5a4a", "#e8b77a", "#b5574b", "#7a4d6b"], h: 0.66 },
-  { position: [1.6, 0.05, 0], colors: ["#d9c7a0", "#e8d6a8", "#c9b07a", "#efe2c0", "#d8bf8c"], h: 0.48 },
-  { position: [2.36, 0.05, 0], colors: ["#2a2f2a", "#6f4a52", "#3d5a4a", "#b5574b", "#2f3b4a", "#5a3a3a", "#3a4a3a"], h: 0.66, lean: 0 },
+  { position: [0.66, 0.056, 0], colors: ["#6f4a52", "#2f3b4a", "#3d5a4a", "#e8b77a", "#b5574b", "#7a4d6b"], h: 0.66 },
+  { position: [1.6, 0.056, 0], colors: ["#d9c7a0", "#e8d6a8", "#c9b07a", "#efe2c0", "#d8bf8c"], h: 0.48 },
+  { position: [2.36, 0.056, 0], colors: ["#2a2f2a", "#6f4a52", "#3d5a4a", "#b5574b", "#2f3b4a", "#5a3a3a", "#3a4a3a"], h: 0.66, lean: 0 },
   { position: [3.3, 0.93, 0], colors: ["#b5574b", "#3d5a4a", "#2f3b4a", "#6f4a52", "#3a5a40"], h: 0.7, lean: 0 },
 ];
 
@@ -228,9 +228,71 @@ export function projectsToHotspots(projects) {
     group: "Work",
     kind: "work",
     discoverable: true,
-    hint: "A colorful stack of books on the yellow shelf",
+    hint: "The thicker book standing out on the yellow shelf",
     position: BOOK_SLOTS[index].position,
     book: BOOK_SLOTS[index],
     project,
   }));
+}
+
+const PAGE_IMAGES = [
+  "/work-brandboard.jpg",
+  "/work-brochure.jpg",
+  "/work-event.jpg",
+  "/work-fundraising.jpg",
+  "/work-kozzi.jpg",
+  "/work-report.jpg",
+  "/work-social.jpg",
+  "/work-stories.jpg",
+];
+
+/** Placeholder case-study pages: swap for real copy (project.pages) when it is written. */
+export function dummyPages(project) {
+  const pics = PAGE_IMAGES.filter((src) => src !== project.image);
+  const copy = [
+    {
+      eyebrow: "Overview",
+      title: project.title,
+      body: "A short introduction: who the work was for, what it had to do, and the one idea that held it together. Replace this with two or three plain sentences.",
+      meta: [
+        ["Category", project.category || project.tag],
+        ["My role", "Design and art direction"],
+        ["Deliverables", "Identity, layouts, social and print"],
+        ["Year", "2025"],
+      ],
+    },
+    {
+      eyebrow: "The brief",
+      title: "What was asked for",
+      body: "Placeholder copy. Describe the problem the client brought, who the audience was and what success would look like.",
+      list: ["A clear, consistent look", "Works on screen and in print", "Easy for a small team to reuse"],
+    },
+    {
+      eyebrow: "Research",
+      title: "Looking before drawing",
+      body: "Placeholder copy. Note what you studied first: similar organisations, the audience, what already existed and what was missing.",
+    },
+    {
+      eyebrow: "Concept",
+      title: "The idea",
+      body: "Placeholder copy. Explain the central idea in a sentence, then show how it turned into sketches, shapes and a first direction.",
+    },
+    {
+      eyebrow: "Design system",
+      title: "Colour, type and layout",
+      body: "Placeholder copy. Cover the palette, the typefaces and the grid, and why each was chosen.",
+      list: ["Colour palette", "Typography", "Grid and spacing", "Image style"],
+    },
+    {
+      eyebrow: "In use",
+      title: "Out in the world",
+      body: "Placeholder copy. Show where the work lives: posts, printed pieces, signage, reports and anything else it was applied to.",
+    },
+    {
+      eyebrow: "Outcome",
+      title: "What changed",
+      body: "Placeholder copy. Close with the result and what you would do next. Add real numbers or a client quote here once you have them.",
+    },
+  ];
+  return copy.map((page, i) => ({ ...page, image: i === 0 ? project.image : pics[(i - 1) % pics.length] }));
 }

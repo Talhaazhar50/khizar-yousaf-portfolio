@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { RoundedBox, useTexture } from "@react-three/drei";
+import { PerformanceMonitor, RoundedBox, useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { PhoneModel } from "./PhoneDial.jsx";
 
 // Layout: back wall is the z = 0 plane, floor is y = 0, everything faces +z.
 const YELLOW = "#ecc22a";
@@ -63,31 +64,197 @@ function Clickable({ hotspot, onSelect, children, ...props }) {
   );
 }
 
-/** Upright books starting at x = 0 on a shelf surface (y = 0). */
-function Books({ colors, h = 0.62, lean = 0, seed = 0 }) {
+const PICK = 2; // which book in a work row is the clickable one (a bit thicker and taller)
+
+function layoutBooks(colors, h, seed, pick = -1) {
   let x = 0;
+  return colors.map((color, i) => {
+    const w = (0.055 + ((i * 37 + seed) % 3) * 0.013) * (i === pick ? 2.2 : 1);
+    const bh = h * (0.8 + ((i * 53 + seed) % 5) * 0.045) * (i === pick ? 1.06 : 1);
+    const cx = x + w / 2;
+    x += w + 0.004;
+    return { color, w, bh, cx };
+  });
+}
+
+function BookBody({ w, bh, color, children }) {
+  return (
+    <>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[w, bh, 0.3]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
+      {[-0.36, 0.38].map((f) => (
+        <mesh key={f} position={[0, bh * f, 0.151]}>
+          <planeGeometry args={[w * 0.9, 0.014]} />
+          <meshStandardMaterial color={BAND} roughness={0.5} />
+        </mesh>
+      ))}
+      {children}
+    </>
+  );
+}
+
+/** Upright books starting at x = 0 on a shelf surface (y = 0). Book `pick` is clickable. */
+function Books({ colors, h = 0.62, lean = 0, seed = 0, pick = -1, hide = false, onPick }) {
+  const [hover, setHover] = useState(false);
   return (
     <group rotation={[0, 0, lean]}>
-      {colors.map((color, i) => {
-        const w = 0.055 + ((i * 37 + seed) % 3) * 0.013;
-        const bh = h * (0.8 + ((i * 53 + seed) % 5) * 0.045);
-        const cx = x + w / 2;
-        x += w + 0.004;
+      {layoutBooks(colors, h, seed, pick).map(({ color, w, bh, cx }, i) => {
+        const mine = i === pick;
+        if (mine && hide) return null; // it is out of the shelf, in the reader's hands
         return (
-          <group key={i} position={[cx, bh / 2, 0.25]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[w, bh, 0.3]} />
-              <meshStandardMaterial color={color} roughness={0.8} />
-            </mesh>
-            {[-0.36, 0.38].map((f) => (
-              <mesh key={f} position={[0, bh * f, 0.151]}>
-                <planeGeometry args={[w * 0.9, 0.014]} />
-                <meshStandardMaterial color={BAND} roughness={0.5} />
-              </mesh>
-            ))}
+          <group
+            key={i}
+            position={[cx, bh / 2, mine && hover ? 0.3 : 0.25]}
+            onClick={
+              mine
+                ? (e) => {
+                    e.stopPropagation();
+                    if (e.delta <= 8) onPick();
+                  }
+                : undefined
+            }
+            onPointerOver={
+              mine
+                ? (e) => {
+                    e.stopPropagation();
+                    setHover(true);
+                    document.body.style.cursor = "pointer";
+                  }
+                : undefined
+            }
+            onPointerOut={
+              mine
+                ? () => {
+                    setHover(false);
+                    document.body.style.cursor = "auto";
+                  }
+                : undefined
+            }
+          >
+            <BookBody w={w} bh={bh} color={color} />
           </group>
         );
       })}
+    </group>
+  );
+}
+
+const rowProps = (hotspot) => ({
+  colors: hotspot.book?.colors || fillColors(0, 4),
+  h: hotspot.book?.h,
+  lean: hotspot.book?.lean || 0,
+  seed: hotspot.id.length,
+});
+
+const easeInOut = (u) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
+
+// The HTML book that takes over (see .studio-book in Studio.css): height min(76svh, 640px), pages 0.775 wide.
+const READ_VH = 0.76;
+const READ_PX = 640;
+const PAGE_ASPECT = 0.775;
+
+/** A real hardcover: two boards, a spine and a block of pages, cover art on the front board. */
+function HardBook({ w, bh, color, map }) {
+  const t = 0.014;
+  const board = <meshStandardMaterial color={color} roughness={0.65} />;
+  return (
+    <>
+      <mesh position={[w / 2 - t / 2, 0, 0]} castShadow>
+        <boxGeometry args={[t, bh, 0.3]} />
+        {board}
+      </mesh>
+      <mesh position={[-w / 2 + t / 2, 0, 0]} castShadow>
+        <boxGeometry args={[t, bh, 0.3]} />
+        {board}
+      </mesh>
+      <mesh position={[0, 0, 0.15 - t / 2]} castShadow>
+        <boxGeometry args={[w, bh, t]} />
+        {board}
+      </mesh>
+      <mesh position={[0, 0, (0.006 - t) / 2]}>
+        <boxGeometry args={[w - 2 * t, bh - 0.024, 0.294 - t]} />
+        <meshStandardMaterial color="#f1e6cf" roughness={0.9} />
+      </mesh>
+      {[-0.36, 0.38].map((f) => (
+        <mesh key={f} position={[0, bh * f, 0.151]}>
+          <planeGeometry args={[w * 0.9, 0.014]} />
+          <meshStandardMaterial color={BAND} roughness={0.5} />
+        </mesh>
+      ))}
+      <mesh position={[w / 2 + 0.0008, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[0.3, bh]} />
+        {/* new material once the cover arrives: three won't recompile a material that gains a map */}
+        <meshBasicMaterial key={map ? "cover" : "wait"} map={map} color={map ? "#ffffff" : color} toneMapped={false} />
+      </mesh>
+    </>
+  );
+}
+
+/** The picked book leaves the shelf, flies in front of the camera and shows its cover. */
+function FlyBook({ hotspot, open, onGone }) {
+  const { colors, h, seed } = rowProps(hotspot);
+  const { color, w, bh, cx } = layoutBooks(colors, h, seed, PICK)[PICK];
+  const ref = useRef();
+  const t = useRef(0);
+  const [map, setMap] = useState(null);
+  const start = useMemo(
+    () => new THREE.Vector3(hotspot.position[0] + cx, hotspot.position[1] + bh / 2, hotspot.position[2] + 0.25),
+    [hotspot, cx, bh]
+  );
+  const goal = useMemo(() => new THREE.Vector3(), []);
+  const dir = useMemo(() => new THREE.Vector3(), []);
+  const src = hotspot.project?.image;
+
+  useEffect(() => {
+    if (!src) return undefined;
+    let alive = true;
+    const loader = new THREE.TextureLoader().setCrossOrigin("anonymous");
+    loader.load(src, (tex) => {
+      // crop to the reading cover's shape, like object-fit: cover
+      const ia = tex.image.width / tex.image.height;
+      if (ia > PAGE_ASPECT) {
+        tex.repeat.set(PAGE_ASPECT / ia, 1);
+        tex.offset.set((1 - PAGE_ASPECT / ia) / 2, 0);
+      } else {
+        tex.repeat.set(1, ia / PAGE_ASPECT);
+        tex.offset.set(0, (1 - ia / PAGE_ASPECT) / 2);
+      }
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
+      if (alive) setMap(tex);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [src]);
+
+  useFrame(({ camera, size }, dt) => {
+    t.current = THREE.MathUtils.clamp(t.current + ((open ? 1 : -1) * dt) / 0.8, 0, 1);
+    const pull = easeInOut(Math.min(t.current / 0.3, 1));
+    const fly = easeInOut(THREE.MathUtils.clamp((t.current - 0.22) / 0.78, 0, 1));
+    const arc = Math.sin(fly * Math.PI);
+    const view = 2 * 5 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); // world height 5 units away
+    const read = (Math.min(READ_VH * size.height, READ_PX) / size.height) * view; // size of the HTML book
+    goal.copy(camera.position).addScaledVector(camera.getWorldDirection(dir), 5);
+    ref.current.position
+      .copy(start)
+      .add(dir.set(0, 0.03 * pull + 0.3 * arc, 0.5 * pull + 0.6 * arc))
+      .lerp(goal, fly);
+    ref.current.rotation.set(0.2 * arc, (-Math.PI / 2) * fly, 0.1 * arc);
+    // the cover grows from a spine into a full page, so it lands exactly under the HTML book
+    ref.current.scale.set(
+      1 + ((read / bh) * 0.6 - 1) * fly,
+      1 + (read / bh - 1) * fly,
+      1 + ((PAGE_ASPECT * read) / 0.3 - 1) * fly
+    );
+    if (!open && t.current === 0) onGone();
+  });
+
+  return (
+    <group ref={ref} position={start}>
+      <HardBook w={w} bh={bh} color={color} map={map} />
     </group>
   );
 }
@@ -111,13 +278,13 @@ function Bookshelf() {
                 {yellow}
               </mesh>
             ))}
-            <mesh position={[cx, h / 2, 0.015]} receiveShadow>
+            <mesh position={[cx, h / 2, 0.02]} receiveShadow>
               <boxGeometry args={[col.w, h, 0.03]} />
               <meshStandardMaterial color={YELLOW_BACK} roughness={0.7} />
             </mesh>
             {col.ys.map((y) => (
               <mesh key={y} position={[cx, Math.max(y, T / 2), DEPTH / 2]} castShadow receiveShadow>
-                <boxGeometry args={[col.w, T, DEPTH]} />
+                <boxGeometry args={[col.w - 2 * T, T, DEPTH]} />
                 {yellow}
               </mesh>
             ))}
@@ -136,6 +303,31 @@ function Bookshelf() {
         <Books colors={fillColors(7, 8)} h={0.72} seed={1} />
       </group>
     </group>
+  );
+}
+
+/** One draw call for all the vine leaves instead of one per leaf. */
+function Leaves({ leaves }) {
+  const ref = useRef();
+  useLayoutEffect(() => {
+    const o = new THREE.Object3D();
+    const c = new THREE.Color();
+    leaves.forEach((leaf, i) => {
+      o.position.set(...leaf.p);
+      o.rotation.set(...leaf.r);
+      o.scale.set(1, 0.55, 0.18);
+      o.updateMatrix();
+      ref.current.setMatrixAt(i, o.matrix);
+      ref.current.setColorAt(i, c.set(leaf.c));
+    });
+    ref.current.instanceMatrix.needsUpdate = true;
+    ref.current.instanceColor.needsUpdate = true;
+  }, [leaves]);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, leaves.length]} castShadow>
+      <sphereGeometry args={[0.055, 8, 6]} />
+      <meshStandardMaterial roughness={0.7} />
+    </instancedMesh>
   );
 }
 
@@ -169,12 +361,7 @@ function Plant({ hotspot, onSelect }) {
         <cylinderGeometry args={[0.2, 0.15, 0.3, 24]} />
         <meshStandardMaterial color="#1e1a17" roughness={0.6} />
       </mesh>
-      {leaves.map((leaf, i) => (
-        <mesh key={i} position={leaf.p} rotation={leaf.r} scale={[1, 0.55, 0.18]} castShadow>
-          <sphereGeometry args={[0.055, 8, 6]} />
-          <meshStandardMaterial color={leaf.c} roughness={0.7} />
-        </mesh>
-      ))}
+      <Leaves leaves={leaves} />
     </Clickable>
   );
 }
@@ -400,24 +587,6 @@ function Cat() {
   );
 }
 
-function Phone() {
-  return (
-    <group>
-      <RoundedBox args={[0.32, 0.12, 0.24]} radius={0.04} position={[0, 0.06, 0]} castShadow>
-        <meshStandardMaterial color="#f0a6a8" roughness={0.45} />
-      </RoundedBox>
-      <mesh position={[0, 0.125, 0.06]} rotation={[-1.2, 0, 0]}>
-        <cylinderGeometry args={[0.07, 0.07, 0.015, 24]} />
-        <meshStandardMaterial color="#f8e6e0" />
-      </mesh>
-      <mesh position={[0, 0.18, -0.03]} rotation={[0, 0, 0]} castShadow>
-        <torusGeometry args={[0.12, 0.028, 10, 24, Math.PI]} />
-        <meshStandardMaterial color="#f0a6a8" roughness={0.45} />
-      </mesh>
-    </group>
-  );
-}
-
 function Globe() {
   return (
     <group>
@@ -568,7 +737,11 @@ function Tube() {
 const SCENE_ITEMS = {
   about: () => <Frame src="/khizar.jpg" w={0.5} h={0.64} />,
   poster: () => <Poster />,
-  contact: () => <Phone />,
+  contact: () => (
+    <group scale={0.34}>
+      <PhoneModel />
+    </group>
+  ),
   resume: () => <Tube />,
   chess: () => <Chess />,
   globe: () => <Globe />,
@@ -631,10 +804,31 @@ function Rig() {
   return null;
 }
 
-function SceneContent({ hotspots, clients, lampMode, onSelect }) {
+function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect }) {
   const byId = useMemo(() => Object.fromEntries(hotspots.map((h) => [h.id, h])), [hotspots]);
   const work = hotspots.filter((h) => h.kind === "work");
   const lampOn = lampMode !== "off";
+  const [flyId, setFlyId] = useState(null); // the book that is out of the shelf, until it is back
+  const flying = work.find((h) => h.id === flyId);
+  const frame = useRef(0);
+
+  // Demand frameloop: draw 30 times a second at rest (the room barely moves), 60 while a book flies.
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    const id = setInterval(invalidate, flyId ? 16 : 33);
+    return () => clearInterval(id);
+  }, [invalidate, flyId]);
+
+  // The room barely moves, so redraw the shadow map every 8th frame, and every frame while a book flies.
+  useFrame(({ gl }) => {
+    frame.current += 1;
+    gl.shadowMap.autoUpdate = false;
+    gl.shadowMap.needsUpdate = flyId !== null || frame.current < 3 || frame.current % 8 === 0;
+  });
+
+  useEffect(() => {
+    if (work.some((h) => h.id === activeId)) setFlyId(activeId);
+  }, [activeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -643,19 +837,22 @@ function SceneContent({ hotspots, clients, lampMode, onSelect }) {
 
       <hemisphereLight args={["#fff1dc", "#3a2a1e", lampOn ? 1.25 : 0.7]} />
       <directionalLight
+        key={low ? "low" : "hi"}
         castShadow
         position={[-6, 7, 6]}
         intensity={lampOn ? 3.2 : 1.8}
         color="#ffe6c4"
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.02}
+        shadow-mapSize={low ? [1536, 1536] : [3072, 3072]}
+        shadow-radius={low ? 3 : 5}
+        shadow-blurSamples={8}
+        shadow-bias={-0.0002}
+        shadow-normalBias={0.008}
         shadow-camera-near={1}
         shadow-camera-far={25}
-        shadow-camera-left={-6}
-        shadow-camera-right={6}
-        shadow-camera-top={5}
-        shadow-camera-bottom={-3}
+        shadow-camera-left={-5.5}
+        shadow-camera-right={5.5}
+        shadow-camera-top={4.5}
+        shadow-camera-bottom={-2}
       />
       <pointLight
         position={[1.08, 2.85, 0.6]}
@@ -672,8 +869,8 @@ function SceneContent({ hotspots, clients, lampMode, onSelect }) {
         <planeGeometry args={[40, 12]} />
         <meshStandardMaterial color={FLOOR} roughness={0.85} />
       </mesh>
-      <mesh position={[0, 0.06, 0.015]} receiveShadow>
-        <boxGeometry args={[40, 0.12, 0.03]} />
+      <mesh position={[0, 0.06, 0.01]} receiveShadow>
+        <boxGeometry args={[40, 0.12, 0.02]} />
         <meshStandardMaterial color="#4a3a2d" roughness={0.9} />
       </mesh>
 
@@ -690,15 +887,18 @@ function SceneContent({ hotspots, clients, lampMode, onSelect }) {
       </group>
 
       {work.map((hotspot) => (
-        <Clickable key={hotspot.id} hotspot={hotspot} onSelect={onSelect}>
+        <group key={hotspot.id} position={hotspot.position}>
           <Books
-            colors={hotspot.book?.colors || fillColors(0, 4)}
-            h={hotspot.book?.h}
-            lean={hotspot.book?.lean || 0}
-            seed={hotspot.id.length}
+            {...rowProps(hotspot)}
+            pick={PICK}
+            hide={hotspot.id === flyId}
+            onPick={() => onSelect(hotspot.id)}
           />
-        </Clickable>
+        </group>
       ))}
+      {flying && (
+        <FlyBook key={flyId} hotspot={flying} open={activeId === flyId} onGone={() => setFlyId(null)} />
+      )}
 
       {Object.entries(SCENE_ITEMS).map(([id, Item]) =>
         byId[id] ? (
@@ -723,17 +923,27 @@ function SceneContent({ hotspots, clients, lampMode, onSelect }) {
   );
 }
 
-export default function StudioScene({ hotspots, clients, lampMode, onSelect, ready }) {
+export default function StudioScene({ hotspots, clients, lampMode, activeId, onSelect, ready, paused }) {
+  const [low, setLow] = useState(false); // the machine can't keep up: drop sharpness for speed
   return (
     <div className={`studio-canvas${ready ? " is-ready" : ""}`}>
       <Canvas
         shadows
-        dpr={[1, 1.75]}
-        camera={{ position: [0.1, 2.1, 11], fov: 30, near: 0.1, far: 60 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+        dpr={low ? 1 : [1, 1.5]}
+        frameloop={paused ? "never" : "demand"}
+        camera={{ position: [0.1, 2.1, 11], fov: 30, near: 1, far: 50 }}
+        gl={{ antialias: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping }}
         onPointerMissed={() => onSelect(null)}
       >
-        <SceneContent hotspots={hotspots} clients={clients} lampMode={lampMode} onSelect={onSelect} />
+        <PerformanceMonitor bounds={() => [22, 70]} onDecline={() => setLow(true)} />
+        <SceneContent
+          hotspots={hotspots}
+          clients={clients}
+          lampMode={lampMode}
+          activeId={activeId}
+          low={low}
+          onSelect={onSelect}
+        />
       </Canvas>
     </div>
   );
