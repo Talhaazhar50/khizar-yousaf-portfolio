@@ -28,3 +28,8 @@ attachments/
 canvases/
 mcps/
 .vercel
+.env*
+
+# Local tooling and scraped reference material
+.claude/
+rea-analysis/
