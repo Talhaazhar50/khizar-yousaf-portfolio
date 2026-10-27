@@ -1,0 +1,58 @@
+:root {
+  --ink: #14181f;
+  --ink-soft: #445064;
+  --paper: #eef2f6;
+  --paper-deep: #e2e8f0;
+  --line: rgba(20, 24, 31, 0.12);
+  --accent: #1f6f8b;
+  --accent-ink: #155a72;
+  --mint: #cfe8ef;
+  --display: "Syne", sans-serif;
+  --body: "IBM Plex Sans", sans-serif;
+  --space: clamp(1rem, 3vw, 2rem);
+  --max: 1120px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 50% at 8% -8%, #d9ebe8 0%, transparent 55%),
+    radial-gradient(ellipse 55% 40% at 100% 0%, #d7e3f2 0%, transparent 50%),
+    var(--paper);
+  font-family: var(--body);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+button,
+.btn {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
