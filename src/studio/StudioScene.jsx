@@ -946,7 +946,7 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect, on
       <hemisphereLight args={["#fff1dc", "#3a2a1e", lampOn ? 1.25 : 0.7]} />
       <directionalLight
         key={low ? "low" : "hi"}
-        castShadow={!WEAK}
+        castShadow={!NO_SHADOWS}
         position={[-6, 7, 6]}
         intensity={lampOn ? 3.2 : 1.8}
         color="#ffe6c4"
@@ -1029,10 +1029,9 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect, on
   );
 }
 
-// Phones, tablets, PCs with few cores or little memory, and PCs with no graphics card
-// (virtual machines, remote desktops, where the browser draws 3D on the CPU) start in the light mode.
+// PCs with few cores or little memory, and PCs with no graphics card (virtual machines, remote
+// desktops, where the browser draws 3D on the CPU) get the light mode: no shadows, no smoothing, 1x pixels.
 function weakDevice() {
-  if (matchMedia("(pointer: coarse)").matches) return true;
   if ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4) return true;
   try {
     const gl = document.createElement("canvas").getContext("webgl");
@@ -1045,14 +1044,17 @@ function weakDevice() {
   }
 }
 const WEAK = weakDevice();
+// Phones and tablets have a real GPU and sharp screens: keep smoothing and up to 2x pixels, drop shadows.
+const PHONE = matchMedia("(pointer: coarse)").matches;
+const NO_SHADOWS = WEAK || PHONE;
 
 export default function StudioScene({ hotspots, clients, lampMode, activeId, onSelect, onReady, ready, paused }) {
   const [low, setLow] = useState(WEAK); // the machine can't keep up: drop sharpness for speed
   return (
     <div className={`studio-canvas${ready ? " is-ready" : ""}`}>
       <Canvas
-        shadows={!WEAK}
-        dpr={low ? 1 : [1, 1.5]}
+        shadows={!NO_SHADOWS}
+        dpr={low ? 1 : PHONE ? [1, 2] : [1, 1.5]}
         frameloop={paused ? "never" : "demand"}
         camera={{ position: [0.1, 2.1, 11], fov: 30, near: 1, far: 50 }}
         gl={{ antialias: !WEAK, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping }}
