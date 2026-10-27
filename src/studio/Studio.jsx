@@ -4,7 +4,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ABOUT,
   CONTACT,
-  CV_HOTSPOT,
   FALLBACK_CLIENTS,
   FALLBACK_PROJECTS,
   PLACES,
@@ -67,7 +66,7 @@ export default function Studio() {
 
   const workHotspots = useMemo(() => projectsToHotspots(projects), [projects]);
   const hotspots = useMemo(
-    () => [...STATIC_HOTSPOTS, ...workHotspots, CV_HOTSPOT],
+    () => [...STATIC_HOTSPOTS, ...workHotspots],
     [workHotspots]
   );
   const discoverable = useMemo(
@@ -411,7 +410,7 @@ export default function Studio() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {active && active.kind !== "lamp" && active.kind !== "work" && active.kind !== "cv" ? (
+        {active && active.kind !== "lamp" && active.kind !== "work" ? (
           <>
             <motion.button
               type="button"
@@ -590,9 +589,9 @@ export default function Studio() {
           </>
         ) : null}
       </AnimatePresence>
-      {(active?.kind === "work" || active?.kind === "cv") && active.project ? (
+      {active?.kind === "work" && active.project ? (
         <div
-          className={`studio-book-wrap${active.kind === "cv" ? " is-direct" : ""}`}
+          className="studio-book-wrap"
           role="dialog"
           aria-modal="true"
           aria-label={active.label}

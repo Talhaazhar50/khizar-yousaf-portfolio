@@ -165,7 +165,7 @@ export function PhoneModel({ wheelRef, onDigit }) {
   const cord = useMemo(cordGeometry, []);
   const wheel = useMemo(wheelGeometry, []);
   const face = useMemo(dialFace, []);
-  const pink = <meshPhysicalMaterial color={PINK} roughness={0.3} clearcoat={0.9} clearcoatRoughness={0.18} />;
+  const pink = <meshStandardMaterial color={PINK} roughness={0.32} />;
   const steel = <meshStandardMaterial color="#c4bfb4" metalness={0.8} roughness={0.28} />;
   const stopA = rad(STOP);
   const mid = [(SLOPE_TOP[0] + SLOPE_END[0]) / 2, (SLOPE_TOP[1] + SLOPE_END[1]) / 2];
@@ -212,7 +212,7 @@ export function PhoneModel({ wheelRef, onDigit }) {
         </mesh>
         <group ref={wheelRef} position={[0, 0.016, 0]}>
           <mesh geometry={wheel}>
-            <meshPhysicalMaterial color="#f6efdf" roughness={0.3} clearcoat={0.5} transparent opacity={0.9} />
+            <meshStandardMaterial color="#f6efdf" roughness={0.3} transparent opacity={0.9} />
           </mesh>
         </group>
         <mesh position={[Math.sin(stopA) * (R + 0.002), 0.03, -Math.cos(stopA) * (R + 0.002)]} rotation={[0, Math.PI / 2 - stopA, 0]}>
@@ -268,7 +268,7 @@ function DialRig({ request, onPress, onDone }) {
   return (
     <group ref={sway} position={[0, -0.36, 0]}>
       <PhoneModel wheelRef={wheel} onDigit={(n) => !spin.current && onPress(n)} />
-      <ContactShadows position={[0, 0.002, 0]} opacity={0.45} scale={3} blur={2.4} far={1.2} resolution={512} />
+      <ContactShadows position={[0, 0.002, 0]} opacity={0.45} scale={3} blur={2.4} far={1.2} resolution={256} frames={1} />
     </group>
   );
 }

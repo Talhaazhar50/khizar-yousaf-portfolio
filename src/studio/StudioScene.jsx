@@ -52,7 +52,6 @@ function Tag({ position, name, title }) {
 
 // A whole bay that acts as one button: a see-through hit box behind the items, and a label.
 const SECTIONS = {
-  cv: { name: "CV", box: { pos: [0, 0.39, -0.15], size: [0.9, 0.75, 0.02] }, tag: [-0.42, 0.78, 0] },
   resume: { name: "Résumé", box: { pos: [-0.275, 0.345, -0.19], size: [0.9, 0.72, 0.02] }, tag: [-0.45, 0.78, 0] },
 };
 
@@ -296,7 +295,6 @@ const PLATES = [
   ["Project 03", 2.775, 0.8],
   ["Where I\u2019ve been", 2.775, 1.6],
   ["R\u00e9sum\u00e9", 2.775, 2.35],
-  ["CV", 2.775, 3.15],
   ["Contact", 3.675, 2.7],
   ["Project 01", 3.675, 1.8],
   ["Project 02", 3.675, 0.9],
@@ -796,7 +794,7 @@ function Cricket() {
       <group position={[-0.02, 0.036, 0.13]}>
         <mesh castShadow>
           <sphereGeometry args={[0.036, 24, 18]} />
-          <meshPhysicalMaterial color="#a91d1a" roughness={0.45} clearcoat={0.5} />
+          <meshStandardMaterial color="#a91d1a" roughness={0.4} />
         </mesh>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.0365, 0.0025, 6, 28]} />
@@ -844,21 +842,22 @@ const SCENE_ITEMS = {
       </group>
     </>
   ),
-  cv: () => <Cricket />,
   globe: () => <Globe />,
   cat: () => <Cat />,
 };
 
-// Narrow screens see a 4.6-unit slice of the room and swipe between these camera x limits.
-const NARROW_W = 5;
-const PAN_MIN = -2.2;
-const PAN_MAX = 1.85;
+// Narrow screens see a 2.6-unit slice of the room and swipe between these camera x limits
+// (left wall at PAN_MIN, right end of the bookshelf at PAN_MAX). They start on the shelf.
+const NARROW_W = 2.6;
+const PAN_MIN = -2.5;
+const PAN_MAX = 2.8;
+const PAN_START = 1.9;
 
 function Rig() {
   const { camera, size, gl } = useThree();
   const goal = useMemo(() => new THREE.Vector3(), []);
   const look = useMemo(() => new THREE.Vector3(0.25, 1.75, 0), []);
-  const panX = useRef(PAN_MAX);
+  const panX = useRef(PAN_START);
   const narrow = size.width / size.height < 1;
 
   useEffect(() => {
@@ -886,7 +885,7 @@ function Rig() {
     };
   }, [gl, narrow, size.width]);
 
-  useFrame((state) => {
+  useFrame((state, dt) => {
     const aspect = size.width / size.height;
     const tan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     const fitW = narrow ? NARROW_W : 9.4;
@@ -898,8 +897,9 @@ function Rig() {
     // Narrow screens aim lower so the floor clears the welcome text.
     const lookY = narrow ? 1.2 : 1.75;
     goal.set(cx + px, lookY + 0.45 + py, dist);
-    camera.position.lerp(goal, 0.08);
-    look.lerp(goal.set(cx, lookY, 0), 0.08);
+    const k = 1 - Math.exp(-dt * 4); // same glide speed at 15 or 60 frames a second
+    camera.position.lerp(goal, k);
+    look.lerp(goal.set(cx, lookY, 0), k);
     camera.lookAt(look);
   });
   return null;
@@ -919,10 +919,10 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect, on
   }
   const frame = useRef(0);
 
-  // Demand frameloop: draw 30 times a second at rest (the room barely moves), 60 while a book flies.
+  // Demand frameloop: draw 30 times a second at rest (15 in the light mode), 60 while a book flies.
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
-    const id = setInterval(invalidate, flyId ? 16 : 33);
+    const id = setInterval(invalidate, flyId ? 16 : WEAK ? 66 : 33);
     return () => clearInterval(id);
   }, [invalidate, flyId]);
 
@@ -946,7 +946,7 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect, on
       <hemisphereLight args={["#fff1dc", "#3a2a1e", lampOn ? 1.25 : 0.7]} />
       <directionalLight
         key={low ? "low" : "hi"}
-        castShadow
+        castShadow={!WEAK}
         position={[-6, 7, 6]}
         intensity={lampOn ? 3.2 : 1.8}
         color="#ffe6c4"
@@ -993,6 +993,9 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect, on
       <group position={[1.85, 1.3, 0.24]} rotation={[0, -0.5, 0]}>
         <Llama />
       </group>
+      <group position={[2.775, 2.375, 0.2]}>
+        <Cricket />
+      </group>
 
       {shelves.map(({ shelf, picks }) => (
         <group key={shelf.id} position={shelf.position}>
@@ -1026,16 +1029,33 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect, on
   );
 }
 
+// Phones, tablets, PCs with few cores or little memory, and PCs with no graphics card
+// (virtual machines, remote desktops, where the browser draws 3D on the CPU) start in the light mode.
+function weakDevice() {
+  if (matchMedia("(pointer: coarse)").matches) return true;
+  if ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4) return true;
+  try {
+    const gl = document.createElement("canvas").getContext("webgl");
+    const info = gl?.getExtension("WEBGL_debug_renderer_info");
+    const name = info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : "";
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    return /swiftshader|basic render|llvmpipe|software/i.test(name);
+  } catch {
+    return false;
+  }
+}
+const WEAK = weakDevice();
+
 export default function StudioScene({ hotspots, clients, lampMode, activeId, onSelect, onReady, ready, paused }) {
-  const [low, setLow] = useState(false); // the machine can't keep up: drop sharpness for speed
+  const [low, setLow] = useState(WEAK); // the machine can't keep up: drop sharpness for speed
   return (
     <div className={`studio-canvas${ready ? " is-ready" : ""}`}>
       <Canvas
-        shadows
+        shadows={!WEAK}
         dpr={low ? 1 : [1, 1.5]}
         frameloop={paused ? "never" : "demand"}
         camera={{ position: [0.1, 2.1, 11], fov: 30, near: 1, far: 50 }}
-        gl={{ antialias: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping }}
+        gl={{ antialias: !WEAK, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping }}
         onPointerMissed={() => onSelect(null)}
       >
         <PerformanceMonitor bounds={() => [22, 70]} onDecline={() => setLow(true)} />

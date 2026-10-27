@@ -90,7 +90,7 @@ export function Earth({ radius = 1, map, pin = 1, focus }) {
           </mesh>
           <mesh position={[0, 0.19, 0]}>
             <sphereGeometry args={[0.04, 18, 14]} />
-            <meshPhysicalMaterial color="#e8481c" roughness={0.3} clearcoat={1} />
+            <meshStandardMaterial color="#e8481c" roughness={0.3} />
           </mesh>
         </group>
       ))}
