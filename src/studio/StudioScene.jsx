@@ -52,6 +52,7 @@ function Tag({ position, name, title }) {
 
 // A whole bay that acts as one button: a see-through hit box behind the items, and a label.
 const SECTIONS = {
+  cv: { name: "CV", box: { pos: [0, 0.39, -0.15], size: [0.9, 0.75, 0.02] }, tag: [-0.42, 0.78, 0] },
   resume: { name: "Résumé", box: { pos: [-0.275, 0.345, -0.19], size: [0.9, 0.72, 0.02] }, tag: [-0.45, 0.78, 0] },
 };
 
@@ -91,13 +92,12 @@ function Clickable({ hotspot, onSelect, children, ...props }) {
 }
 
 
-const PICK = 2; // which book in a work row is the clickable one (a bit thicker and taller)
 
-function layoutBooks(colors, h, seed, pick = -1) {
+function layoutBooks(colors, h, seed, picks = []) {
   let x = 0;
   return colors.map((color, i) => {
-    const w = (0.055 + ((i * 37 + seed) % 3) * 0.013) * (i === pick ? 2.2 : 1);
-    const bh = h * (0.8 + ((i * 53 + seed) % 5) * 0.045) * (i === pick ? 1.06 : 1);
+    const w = (0.055 + ((i * 37 + seed) % 3) * 0.013) * (picks.includes(i) ? 1.8 : 1);
+    const bh = h * (0.8 + ((i * 53 + seed) % 5) * 0.045) * (picks.includes(i) ? 1.06 : 1);
     const cx = x + w / 2;
     x += w + 0.004;
     return { color, w, bh, cx };
@@ -122,59 +122,54 @@ function BookBody({ w, bh, color, children }) {
   );
 }
 
-/** Upright books starting at x = 0 on a shelf surface (y = 0). Book `pick` is clickable. */
-function Books({ colors, h = 0.62, lean = 0, seed = 0, pick = -1, hide = false, tag, onPick }) {
-  const [hover, setHover] = useState(false);
+/** Upright books starting at x = 0 on a shelf surface (y = 0). `picks` are the clickable ones: {index, id, section, title}. */
+function Books({ colors, h = 0.62, lean = 0, seed = 0, picks = [], hideId, onPick }) {
+  const [hover, setHover] = useState(-1);
+  const byIndex = new Map(picks.map((pk) => [pk.index, pk]));
   return (
     <group rotation={[0, 0, lean]}>
-      {layoutBooks(colors, h, seed, pick).map(({ color, w, bh, cx }, i) => {
-        const mine = i === pick;
-        if (mine && hide) return null; // it is out of the shelf, in the reader's hands
+      {layoutBooks(colors, h, seed, [...byIndex.keys()]).map(({ color, w, bh, cx }, i) => {
+        const pick = byIndex.get(i);
+        if (pick && pick.id === hideId) return null; // it is out of the shelf, in the reader's hands
+        const on = pick && hover === i;
         return (
           <group
             key={i}
-            position={[cx, bh / 2, mine && hover ? 0.3 : 0.25]}
+            position={[cx, bh / 2, on ? 0.3 : 0.25]}
             onClick={
-              mine
+              pick
                 ? (e) => {
                     e.stopPropagation();
-                    if (e.delta <= 8) onPick();
+                    if (e.delta <= 8) onPick(pick.id);
                   }
                 : undefined
             }
             onPointerOver={
-              mine
+              pick
                 ? (e) => {
                     e.stopPropagation();
-                    setHover(true);
+                    setHover(i);
                     document.body.style.cursor = "pointer";
                   }
                 : undefined
             }
             onPointerOut={
-              mine
+              pick
                 ? () => {
-                    setHover(false);
+                    setHover(-1);
                     document.body.style.cursor = "auto";
                   }
                 : undefined
             }
           >
             <BookBody w={w} bh={bh} color={color} />
-            {mine && hover && tag ? <Tag position={[0, bh / 2 + 0.1, 0.2]} {...tag} /> : null}
+            {on ? <Tag position={[0, bh / 2 + 0.1, 0.2]} name={pick.section} title={pick.title} /> : null}
           </group>
         );
       })}
     </group>
   );
 }
-
-const rowProps = (hotspot) => ({
-  colors: hotspot.book?.colors || fillColors(0, 4),
-  h: hotspot.book?.h,
-  lean: hotspot.book?.lean || 0,
-  seed: hotspot.id.length,
-});
 
 const easeInOut = (u) => (u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2);
 
@@ -222,8 +217,8 @@ function HardBook({ w, bh, color, map }) {
 
 /** The picked book leaves the shelf, flies in front of the camera and shows its cover. */
 function FlyBook({ hotspot, open, onGone }) {
-  const { colors, h, seed } = rowProps(hotspot);
-  const { color, w, bh, cx } = layoutBooks(colors, h, seed, PICK)[PICK];
+  const { colors, h, seed } = hotspot.shelf;
+  const { color, w, bh, cx } = layoutBooks(colors, h, seed, [hotspot.pickIndex])[hotspot.pickIndex];
   const ref = useRef();
   const t = useRef(0);
   const [map, setMap] = useState(null);
@@ -291,6 +286,62 @@ function fillColors(seed, count) {
   return Array.from({ length: count }, (_, i) => FILL_PALETTE[(seed + i * 5) % FILL_PALETTE.length]);
 }
 
+/** Heading for a bay: [text, x, y] on the back panel, just under the board above. */
+const PLATES = [
+  ["Social Media", 1.075, 2.46],
+  ["Branding", 1.075, 1.61],
+  ["UI / UX", 1.075, 0.78],
+  ["Logo", 1.925, 1.18],
+  ["Poster Design", 1.925, 0.55],
+  ["Project 03", 2.775, 0.72],
+  ["Where I\u2019ve been", 2.775, 1.52],
+  ["R\u00e9sum\u00e9", 2.775, 2.27],
+  ["CV", 2.775, 3.06],
+  ["Contact", 3.675, 2.6],
+  ["Project 01", 3.675, 1.72],
+  ["Project 02", 3.675, 0.82],
+];
+const PLATE_H = 0.105;
+
+function Plate({ text, position }) {
+  const [fontReady, setFontReady] = useState(false);
+  useEffect(() => {
+    document.fonts?.load("800 48px Karla").then(() => setFontReady(true));
+  }, []);
+  const { map, aspect } = useMemo(() => {
+    const label = text.toUpperCase();
+    const font = "800 50px Karla, system-ui, sans-serif";
+    const probe = document.createElement("canvas").getContext("2d");
+    probe.font = font;
+    probe.letterSpacing = "5px";
+    const w = Math.ceil(probe.measureText(label).width) + 80;
+    const h = 100;
+    const tex = canvasTexture(w, h, (ctx) => {
+      ctx.fillStyle = "#f2c14e";
+      ctx.strokeStyle = "#2a1f16";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.roundRect(4, 4, w - 8, h - 8, (h - 8) / 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#2a1f16";
+      ctx.font = font;
+      ctx.letterSpacing = "5px";
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "center";
+      ctx.fillText(label, w / 2 + 2, h / 2 + 3);
+    });
+    return { map: tex, aspect: w / h };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, fontReady]);
+  return (
+    <mesh position={position}>
+      <planeGeometry args={[PLATE_H * aspect, PLATE_H]} />
+      <meshBasicMaterial map={map} transparent toneMapped={false} />
+    </mesh>
+  );
+}
+
 function Bookshelf() {
   const yellow = <meshStandardMaterial color={YELLOW} roughness={0.55} />;
   return (
@@ -320,10 +371,9 @@ function Bookshelf() {
         );
       })}
 
-      {/* Decorative fill so every bay feels lived in */}
-      <group position={[3.3, 0.03, 0]}>
-        <Books colors={fillColors(7, 8)} h={0.72} seed={1} />
-      </group>
+      {PLATES.map(([text, x, y]) => (
+        <Plate key={text} text={text} position={[x, y, 0.045]} />
+      ))}
     </group>
   );
 }
@@ -700,28 +750,59 @@ function Lamp({ mode }) {
   );
 }
 
-function Chess() {
-  const map = useMemo(
-    () =>
-      canvasTexture(256, 256, (ctx) => {
-        for (let r = 0; r < 8; r += 1)
-          for (let c = 0; c < 8; c += 1) {
-            ctx.fillStyle = (r + c) % 2 ? "#6b4a2e" : "#efe2c6";
-            ctx.fillRect(c * 32, r * 32, 32, 32);
-          }
-      }),
-    []
-  );
+/** Bat, wicket and ball: the CV bay. */
+function Cricket() {
+  const wood = <meshStandardMaterial color="#e2c28e" roughness={0.6} />;
+  const dark = <meshStandardMaterial color="#3a2a20" roughness={0.6} />;
   return (
-    <group rotation={[-0.12, 0, 0]}>
-      <mesh position={[0, 0.27, 0]} castShadow>
-        <boxGeometry args={[0.54, 0.54, 0.03]} />
-        <meshStandardMaterial color="#5a3d26" />
-      </mesh>
-      <mesh position={[0, 0.27, 0.016]}>
-        <planeGeometry args={[0.48, 0.48]} />
-        <meshStandardMaterial map={map} />
-      </mesh>
+    <group>
+      <group position={[-0.2, 0, 0]}>
+        <mesh position={[0, 0.01, 0]} castShadow>
+          <boxGeometry args={[0.16, 0.02, 0.08]} />
+          {dark}
+        </mesh>
+        {[-0.045, 0, 0.045].map((x) => (
+          <mesh key={x} position={[x, 0.19, 0]} castShadow>
+            <cylinderGeometry args={[0.013, 0.013, 0.34, 10]} />
+            {wood}
+          </mesh>
+        ))}
+        {[-0.0225, 0.0225].map((x) => (
+          <mesh key={x} position={[x, 0.364, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[0.006, 0.006, 0.05, 8]} />
+            <meshStandardMaterial color="#c9a05a" />
+          </mesh>
+        ))}
+      </group>
+
+      <group position={[0.2, 0, -0.02]} rotation={[0, -0.25, -0.2]}>
+        <RoundedBox args={[0.11, 0.36, 0.035]} radius={0.012} position={[0, 0.2, 0]} castShadow>
+          {wood}
+        </RoundedBox>
+        <mesh position={[0, 0.4, 0]} castShadow>
+          <cylinderGeometry args={[0.018, 0.045, 0.06, 12]} />
+          {wood}
+        </mesh>
+        <mesh position={[0, 0.5, 0]} castShadow>
+          <cylinderGeometry args={[0.018, 0.018, 0.14, 12]} />
+          {dark}
+        </mesh>
+        <mesh position={[0, 0.52, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, 0.09, 12]} />
+          <meshStandardMaterial color="#b8362f" roughness={0.7} />
+        </mesh>
+      </group>
+
+      <group position={[-0.02, 0.036, 0.13]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.036, 24, 18]} />
+          <meshPhysicalMaterial color="#a91d1a" roughness={0.45} clearcoat={0.5} />
+        </mesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.0365, 0.0025, 6, 28]} />
+          <meshStandardMaterial color="#efe6d2" />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -763,7 +844,7 @@ const SCENE_ITEMS = {
       </group>
     </>
   ),
-  chess: () => <Chess />,
+  cv: () => <Cricket />,
   globe: () => <Globe />,
   cat: () => <Cat />,
 };
@@ -830,6 +911,12 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect }) 
   const lampOn = lampMode !== "off";
   const [flyId, setFlyId] = useState(null); // the book that is out of the shelf, until it is back
   const flying = work.find((h) => h.id === flyId);
+  const shelves = [];
+  for (const h of work) {
+    let row = shelves.find((r) => r.shelf === h.shelf);
+    if (!row) shelves.push((row = { shelf: h.shelf, picks: [] }));
+    row.picks.push({ index: h.pickIndex, id: h.id, section: h.section, title: h.project.title });
+  }
   const frame = useRef(0);
 
   // Demand frameloop: draw 30 times a second at rest (the room barely moves), 60 while a book flies.
@@ -906,15 +993,9 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect }) 
         <Llama />
       </group>
 
-      {work.map((hotspot) => (
-        <group key={hotspot.id} position={hotspot.position}>
-          <Books
-            {...rowProps(hotspot)}
-            pick={PICK}
-            tag={{ name: hotspot.section, title: hotspot.project?.title }}
-            hide={hotspot.id === flyId}
-            onPick={() => onSelect(hotspot.id)}
-          />
+      {shelves.map(({ shelf, picks }) => (
+        <group key={shelf.id} position={shelf.position}>
+          <Books colors={shelf.colors} h={shelf.h} seed={shelf.seed} picks={picks} hideId={flyId} onPick={onSelect} />
         </group>
       ))}
       {flying && (

@@ -1154,3 +1154,20 @@ a.studio-menu__item {
   columns: 2;
   column-gap: 1.5rem;
 }
+
+/* CV (the cricket set) opens the reader straight away: nothing has to fly out of the shelf first */
+.studio-book-wrap.is-direct {
+  animation-delay: 0s;
+}
+
+.is-direct .studio-book.is-opening {
+  animation-delay: 0.25s;
+}
+
+.is-direct .studio-book__leaf.is-cover {
+  animation-delay: 0.25s;
+}
+
+.is-direct .studio-book__page--text.is-intro > * {
+  animation-delay: 0.9s;
+}

@@ -18,7 +18,7 @@ const emptyClient = {
   alt: "",
   file: null,
 };
-const CATEGORIES = ["Branding", "Social", "Print", "Events", "Other"];
+const CATEGORIES = ["Branding", "Social", "UI/UX", "Logo", "Poster", "Print", "Events", "Other"];
 const SPANS = [
   { value: "lg", label: "Large" },
   { value: "md", label: "Medium" },

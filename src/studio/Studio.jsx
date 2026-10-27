@@ -54,7 +54,6 @@ export default function Studio() {
   const [discovered, setDiscovered] = useState(loadDiscovered);
   const [activeId, setActiveId] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [hint, setHint] = useState(null);
   const [lampMode, setLampMode] = useState("warm");
   const [ready, setReady] = useState(false);
   const [loaderProgress, setLoaderProgress] = useState(0);
@@ -210,14 +209,6 @@ export default function Studio() {
     markDiscovered(id);
     setActiveId(id);
     setMenuOpen(false);
-    setHint(null);
-  }
-
-  function showHint() {
-    const remaining = discoverable.filter((h) => !discovered.has(h.id));
-    const pool = remaining.length ? remaining : discoverable;
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    setHint(pick?.hint || "Click around the studio.");
   }
 
   async function onSubmit(event) {
@@ -317,9 +308,6 @@ export default function Studio() {
         <div className="studio-top">
           <div className="studio-brand">Khizar Yousaf</div>
           <div className="studio-top__actions">
-            <button type="button" className="studio-pill studio-pill--accent" onClick={showHint}>
-              Hints
-            </button>
             <button
               type="button"
               className="studio-pill"
@@ -354,20 +342,6 @@ export default function Studio() {
           ))}
         </ul>
       </nav>
-
-      <AnimatePresence>
-        {hint ? (
-          <motion.div
-            className="studio-hint"
-            initial={reduce ? false : { opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-          >
-            <strong>Hint:</strong> {hint}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
 
       <AnimatePresence>
         {menuOpen ? (
@@ -425,7 +399,7 @@ export default function Studio() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {active && active.kind !== "lamp" && active.kind !== "work" ? (
+        {active && active.kind !== "lamp" && active.kind !== "work" && active.kind !== "cv" ? (
           <>
             <motion.button
               type="button"
@@ -604,9 +578,9 @@ export default function Studio() {
           </>
         ) : null}
       </AnimatePresence>
-      {active?.kind === "work" && active.project ? (
+      {(active?.kind === "work" || active?.kind === "cv") && active.project ? (
         <div
-          className="studio-book-wrap"
+          className={`studio-book-wrap${active.kind === "cv" ? " is-direct" : ""}`}
           role="dialog"
           aria-modal="true"
           aria-label={active.label}

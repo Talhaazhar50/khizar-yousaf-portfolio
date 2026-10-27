@@ -7,7 +7,6 @@ export const STATIC_HOTSPOTS = [
     group: "About",
     kind: "about",
     discoverable: true,
-    hint: "The framed portrait on the wall shelf",
     position: [-2.15, 2.795, 0.12],
   },
   {
@@ -16,7 +15,6 @@ export const STATIC_HOTSPOTS = [
     group: "Clients",
     kind: "clients",
     discoverable: true,
-    hint: "The corkboard under the wall shelf",
     position: [-2.2, 1.55, 0.03],
   },
   {
@@ -25,7 +23,6 @@ export const STATIC_HOTSPOTS = [
     group: "Skills",
     kind: "skills",
     discoverable: true,
-    hint: "The plant on the yellow wall shelf",
     position: [-3.15, 2.795, 0.14],
   },
   {
@@ -34,7 +31,6 @@ export const STATIC_HOTSPOTS = [
     group: "Play",
     kind: "mug",
     discoverable: true,
-    hint: "The framed poster on the wall",
     position: [-3.35, 1.55, 0.01],
   },
   {
@@ -43,7 +39,6 @@ export const STATIC_HOTSPOTS = [
     group: "Contact",
     kind: "contact",
     discoverable: true,
-    hint: "The pink phone on the right-hand shelf",
     position: [3.67, 1.83, 0.24],
   },
   {
@@ -52,7 +47,6 @@ export const STATIC_HOTSPOTS = [
     group: "Contact",
     kind: "resume",
     discoverable: true,
-    hint: "The poster tube on the tall shelf",
     position: [3.05, 1.63, 0.24],
   },
   {
@@ -61,17 +55,7 @@ export const STATIC_HOTSPOTS = [
     group: "Play",
     kind: "lamp",
     discoverable: true,
-    hint: "The moon lamp on top of the bookshelf",
     position: [1.075, 2.575, 0.22],
-  },
-  {
-    id: "chess",
-    label: "Side quests",
-    group: "Play",
-    kind: "mug",
-    discoverable: true,
-    hint: "The checkered board on the shelf",
-    position: [2.77, 2.38, 0.12],
   },
   {
     id: "globe",
@@ -79,7 +63,6 @@ export const STATIC_HOTSPOTS = [
     group: "Play",
     kind: "globe",
     discoverable: true,
-    hint: "The little globe on the shelf",
     position: [2.95, 0.83, 0.24],
   },
   {
@@ -88,7 +71,6 @@ export const STATIC_HOTSPOTS = [
     group: "Play",
     kind: "mug",
     discoverable: true,
-    hint: "The cat sitting on the floor",
     position: [0.05, 0, 1.3],
   },
 ];
@@ -211,29 +193,59 @@ export const FALLBACK_CLIENTS = [
   },
 ];
 
-/** Interactive book rows sitting ON shelf boards (world positions). */
-export const BOOK_SLOTS = [
-  { position: [0.66, 1.73, 0], colors: ["#8f9e7a", "#e9dcc0", "#c98a5e", "#e3a57a", "#7f8f6a", "#d9c7a0", "#b5574b"], h: 0.66 },
-  { position: [0.66, 0.88, 0], colors: ["#a9c79a", "#e9dcc0", "#7fae78", "#cfe0b8", "#9cc48f", "#6f9a5f"], h: 0.66 },
-  { position: [0.66, 0.056, 0], colors: ["#6f4a52", "#2f3b4a", "#3d5a4a", "#e8b77a", "#b5574b", "#7a4d6b"], h: 0.66 },
-  { position: [1.6, 0.056, 0], colors: ["#d9c7a0", "#e8d6a8", "#c9b07a", "#efe2c0", "#d8bf8c"], h: 0.48 },
-  { position: [2.36, 0.056, 0], colors: ["#2a2f2a", "#6f4a52", "#3d5a4a", "#b5574b", "#2f3b4a", "#5a3a3a", "#3a4a3a"], h: 0.66, lean: 0 },
-  { position: [3.3, 0.93, 0], colors: ["#b5574b", "#3d5a4a", "#2f3b4a", "#6f4a52", "#3a5a40"], h: 0.7, lean: 0 },
+/**
+ * The bookshelf, bay by bay. Books on a shelf are projects whose category is in `match`;
+ * missing ones are filled with sample projects so every shelf can be opened.
+ * `position` is the shelf board the row stands on, `colors` are all the books in the row.
+ */
+export const SHELVES = [
+  { id: "social", title: "Social Media", match: ["social"], books: 4, position: [0.66, 1.73, 0], h: 0.6, seed: 1, colors: ["#8f9e7a", "#e9dcc0", "#c98a5e", "#e3a57a", "#7f8f6a", "#d9c7a0", "#b5574b"] },
+  { id: "branding", title: "Branding", match: ["branding"], books: 4, position: [0.66, 0.88, 0], h: 0.6, seed: 2, colors: ["#a9c79a", "#e9dcc0", "#7fae78", "#cfe0b8", "#9cc48f", "#6f9a5f", "#d9c7a0"] },
+  { id: "uiux", title: "UI / UX", match: ["ui/ux", "ui", "ux", "uiux"], books: 4, position: [0.66, 0.056, 0], h: 0.6, seed: 3, colors: ["#6f4a52", "#2f3b4a", "#3d5a4a", "#e8b77a", "#b5574b", "#7a4d6b", "#2a2f2a"] },
+  { id: "logo", title: "Logo", match: ["logo"], books: 3, position: [1.6, 0.66, 0], h: 0.42, seed: 4, colors: ["#e9dcc0", "#a9c79a", "#e8b77a", "#7f8f6a", "#b5574b"] },
+  { id: "poster", title: "Poster Design", match: ["poster", "print", "events"], books: 3, position: [1.6, 0.056, 0], h: 0.42, seed: 5, colors: ["#d9c7a0", "#e8d6a8", "#c9b07a", "#efe2c0", "#d8bf8c"] },
+  { id: "p1", title: "Project 01", books: 1, position: [3.3, 0.93, 0], h: 0.62, seed: 6, colors: ["#b5574b", "#3d5a4a", "#2f3b4a", "#6f4a52", "#3a5a40"] },
+  { id: "p2", title: "Project 02", books: 1, position: [3.3, 0.056, 0], h: 0.64, seed: 7, colors: ["#8f9e7a", "#e9dcc0", "#c98a5e", "#e3a57a", "#7f8f6a", "#d9c7a0", "#b5574b", "#6f4a52"] },
+  { id: "p3", title: "Project 03", books: 1, position: [2.36, 0.056, 0], h: 0.6, seed: 8, colors: ["#2a2f2a", "#6f4a52", "#3d5a4a", "#b5574b", "#2f3b4a", "#5a3a3a", "#3a4a3a"] },
 ];
 
+/** Placeholder until the real project exists. */
+function sampleProject(shelf, n) {
+  const featured = !shelf.match;
+  return {
+    id: `${shelf.id}-sample-${n + 1}`,
+    title: featured ? `Featured project ${shelf.title.slice(-2)}` : `${shelf.title} sample ${n + 1}`,
+    tag: "Sample project",
+    category: shelf.title,
+    image: PAGE_IMAGES[(SHELVES.indexOf(shelf) * 3 + n) % PAGE_IMAGES.length],
+  };
+}
+
 export function projectsToHotspots(projects) {
-  return projects.slice(0, BOOK_SLOTS.length).map((project, index) => ({
-    id: `work-${project.id}`,
-    label: project.title,
-    group: "Work",
-    kind: "work",
-    discoverable: true,
-    hint: "The thicker book standing out on the yellow shelf",
-    section: "Work",
-    position: BOOK_SLOTS[index].position,
-    book: BOOK_SLOTS[index],
-    project,
-  }));
+  const used = new Set();
+  return SHELVES.flatMap((shelf) => {
+    const real = shelf.match
+      ? projects
+          .filter((pr) => !used.has(pr.id) && shelf.match.includes(String(pr.category || "").toLowerCase()))
+          .slice(0, shelf.books)
+      : [];
+    real.forEach((pr) => used.add(pr.id));
+    const list = [...real];
+    while (list.length < shelf.books) list.push(sampleProject(shelf, list.length));
+    return list.map((project, j) => ({
+      id: `work-${project.id}`,
+      label: project.title,
+      group: shelf.title,
+      kind: "work",
+      discoverable: true,
+      section: shelf.title,
+      shelf,
+      // spread the clickable books along the row
+      pickIndex: Math.floor(((j + 0.5) * shelf.colors.length) / shelf.books),
+      position: shelf.position,
+      project,
+    }));
+  });
 }
 
 const PAGE_IMAGES = [
@@ -357,15 +369,9 @@ export const CV_HOTSPOT = {
   id: "cv",
   label: "Curriculum Vitae",
   group: "About",
-  kind: "work",
+  kind: "cv",
   discoverable: true,
-  hint: "The book in the middle bay of the left shelf",
   section: "CV",
-  position: [1.6, 0.66, 0],
-  book: {
-    position: [1.6, 0.66, 0],
-    colors: ["#e9dcc0", "#a9c79a", "#e8b77a", "#7f8f6a", "#b5574b", "#c98a5e"],
-    h: 0.48,
-  },
+  position: [2.775, 2.375, 0.2],
   project: CV_PROJECT,
 };
