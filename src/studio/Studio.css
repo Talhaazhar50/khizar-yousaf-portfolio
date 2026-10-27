@@ -1171,3 +1171,13 @@ a.studio-menu__item {
 .is-direct .studio-book__page--text.is-intro > * {
   animation-delay: 0.9s;
 }
+
+.studio-phone__stage--globe {
+  height: min(480px, 58svh);
+}
+
+@media (max-width: 720px) {
+  .studio-phone__stage--globe {
+    height: 320px;
+  }
+}

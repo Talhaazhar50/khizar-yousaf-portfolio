@@ -56,6 +56,8 @@ export default function Studio() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [lampMode, setLampMode] = useState("warm");
   const [ready, setReady] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false); // the room has drawn
+  const [minWait, setMinWait] = useState(false); // the loader has shown its little shelf
   const [loaderProgress, setLoaderProgress] = useState(0);
   const [booksUp, setBooksUp] = useState(0);
   const [sending, setSending] = useState(false);
@@ -104,7 +106,7 @@ export default function Studio() {
     if (reduce) {
       setBooksUp(LOADER_BOOKS.length);
       setLoaderProgress(1);
-      const t = setTimeout(() => setReady(true), 200);
+      const t = setTimeout(() => setMinWait(true), 200);
       return () => clearTimeout(t);
     }
 
@@ -117,21 +119,30 @@ export default function Studio() {
         }
         return n + 1;
       });
-    }, 180);
+    }, 110);
 
     const progressTimer = setInterval(() => {
       frame += 1;
-      setLoaderProgress(Math.min(1, frame / 18));
-      if (frame >= 18) clearInterval(progressTimer);
-    }, 80);
+      setLoaderProgress(Math.min(1, frame / 16));
+      if (frame >= 16) clearInterval(progressTimer);
+    }, 50);
 
-    const done = setTimeout(() => setReady(true), 1700);
+    const done = setTimeout(() => setMinWait(true), 800);
     return () => {
       clearInterval(bookTimer);
       clearInterval(progressTimer);
       clearTimeout(done);
     };
   }, [reduce]);
+
+  // Open the door as soon as the room has drawn, but never leave the visitor waiting past 7s.
+  useEffect(() => {
+    const giveUp = setTimeout(() => setSceneReady(true), 7000);
+    return () => clearTimeout(giveUp);
+  }, []);
+  useEffect(() => {
+    if (sceneReady && minWait) setReady(true);
+  }, [sceneReady, minWait]);
 
   const phoneOpen = active?.kind === "contact";
   const wide = phoneOpen || active?.kind === "globe";
@@ -276,6 +287,7 @@ export default function Studio() {
           clients={clients}
           lampMode={lampMode}
           activeId={activeId}
+          onReady={() => setSceneReady(true)}
           paused={!!covered}
           onSelect={openHotspot}
           ready={ready}
@@ -438,7 +450,7 @@ export default function Studio() {
               {active.kind === "about" ? (
                 <div className="studio-panel__body">
                   <div className="studio-panel__media">
-                    <img src="/khizar.jpg" alt="Khizar Yousaf" />
+                    <img src="/img/khizar.jpg" alt="Khizar Yousaf" />
                   </div>
                   <p>{ABOUT.body}</p>
                   <div className="studio-stats">

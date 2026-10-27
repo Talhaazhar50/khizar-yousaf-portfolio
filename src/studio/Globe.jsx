@@ -184,7 +184,7 @@ export default function GlobeView({ focus }) {
   return (
     <Canvas
       dpr={[1, 2]}
-      camera={{ position: [0, 0, 4.2], fov: 30 }}
+      camera={{ position: [0, 0, 3.9], fov: 30 }}
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
     >
       <hemisphereLight args={["#cfe3ff", "#1a1410", 1.1]} />

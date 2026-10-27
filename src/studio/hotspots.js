@@ -133,42 +133,42 @@ export const FALLBACK_PROJECTS = [
     title: "Kozzi Space Brand Identity",
     tag: "Branding · USA",
     category: "Branding",
-    image: "/work-kozzi.jpg",
+    image: "/img/work-kozzi.jpg",
   },
   {
     id: "social",
     title: "Alkhidmat VMD Campaigns",
     tag: "Social Media",
     category: "Social",
-    image: "/work-social.jpg",
+    image: "/img/work-social.jpg",
   },
   {
     id: "report",
     title: "Allah Wale Annual Report",
     tag: "Print Design",
     category: "Print",
-    image: "/work-report.jpg",
+    image: "/img/work-report.jpg",
   },
   {
     id: "event",
     title: "Workshop Event Branding",
     tag: "Event Design",
     category: "Events",
-    image: "/work-event.jpg",
+    image: "/img/work-event.jpg",
   },
   {
     id: "fundraising",
     title: "Fundraising Campaign Visuals",
     tag: "Campaign Design",
     category: "Social",
-    image: "/work-fundraising.jpg",
+    image: "/img/work-fundraising.jpg",
   },
   {
     id: "stories",
     title: "Volunteer Story Packs",
     tag: "Social Stories",
     category: "Social",
-    image: "/work-stories.jpg",
+    image: "/img/work-stories.jpg",
   },
 ];
 
@@ -249,14 +249,14 @@ export function projectsToHotspots(projects) {
 }
 
 const PAGE_IMAGES = [
-  "/work-brandboard.jpg",
-  "/work-brochure.jpg",
-  "/work-event.jpg",
-  "/work-fundraising.jpg",
-  "/work-kozzi.jpg",
-  "/work-report.jpg",
-  "/work-social.jpg",
-  "/work-stories.jpg",
+  "/img/work-brandboard.jpg",
+  "/img/work-brochure.jpg",
+  "/img/work-event.jpg",
+  "/img/work-fundraising.jpg",
+  "/img/work-kozzi.jpg",
+  "/img/work-report.jpg",
+  "/img/work-social.jpg",
+  "/img/work-stories.jpg",
 ];
 
 /** Placeholder case-study pages: swap for real copy (project.pages) when it is written. */
@@ -324,7 +324,7 @@ const CV_PROJECT = {
   title: "Curriculum Vitae",
   tag: "Experience, skills and contact",
   category: "CV",
-  image: "/khizar.jpg",
+  image: "/img/khizar.jpg",
   pages: [
     {
       eyebrow: "Curriculum vitae",
@@ -335,21 +335,21 @@ const CV_PROJECT = {
         ["Experience", `${ABOUT.stats[0].value} years`],
         ["Based in", "Lahore, Pakistan"],
       ],
-      image: "/khizar.jpg",
+      image: "/img/khizar.jpg",
     },
     {
       eyebrow: "Experience",
       title: "Where I’ve worked",
       body: "Roles, newest first.",
       list: ABOUT.jobs.map((job) => `${job.role}, ${job.org} (${job.dates})`),
-      image: "/work-social.jpg",
+      image: "/img/work-social.jpg",
     },
     {
       eyebrow: "Skills",
       title: "Tools and craft",
       body: "What I use every week.",
       list: SKILLS,
-      image: "/work-brandboard.jpg",
+      image: "/img/work-brandboard.jpg",
     },
     {
       eyebrow: "Contact",
@@ -360,7 +360,7 @@ const CV_PROJECT = {
         ["Phone", CONTACT.phone],
         ["LinkedIn", "linkedin.com/in/khizar-yousuf-749592229"],
       ],
-      image: "/work-kozzi.jpg",
+      image: "/img/work-kozzi.jpg",
     },
   ],
 };

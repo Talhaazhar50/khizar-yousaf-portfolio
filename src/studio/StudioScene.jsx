@@ -286,22 +286,22 @@ function fillColors(seed, count) {
   return Array.from({ length: count }, (_, i) => FILL_PALETTE[(seed + i * 5) % FILL_PALETTE.length]);
 }
 
-/** Heading for a bay: [text, x, y] on the back panel, just under the board above. */
+/** Heading for a bay: [text, x, y of the board above it]. Stuck on that board's front edge. */
 const PLATES = [
-  ["Social Media", 1.075, 2.46],
-  ["Branding", 1.075, 1.61],
-  ["UI / UX", 1.075, 0.78],
-  ["Logo", 1.925, 1.18],
-  ["Poster Design", 1.925, 0.55],
-  ["Project 03", 2.775, 0.72],
-  ["Where I\u2019ve been", 2.775, 1.52],
-  ["R\u00e9sum\u00e9", 2.775, 2.27],
-  ["CV", 2.775, 3.06],
-  ["Contact", 3.675, 2.6],
-  ["Project 01", 3.675, 1.72],
-  ["Project 02", 3.675, 0.82],
+  ["Social Media", 1.075, 2.55],
+  ["Branding", 1.075, 1.7],
+  ["UI / UX", 1.075, 0.85],
+  ["Logo", 1.925, 1.27],
+  ["Poster Design", 1.925, 0.63],
+  ["Project 03", 2.775, 0.8],
+  ["Where I\u2019ve been", 2.775, 1.6],
+  ["R\u00e9sum\u00e9", 2.775, 2.35],
+  ["CV", 2.775, 3.15],
+  ["Contact", 3.675, 2.7],
+  ["Project 01", 3.675, 1.8],
+  ["Project 02", 3.675, 0.9],
 ];
-const PLATE_H = 0.105;
+const PLATE_H = 0.11;
 
 function Plate({ text, position }) {
   const [fontReady, setFontReady] = useState(false);
@@ -372,7 +372,7 @@ function Bookshelf() {
       })}
 
       {PLATES.map(([text, x, y]) => (
-        <Plate key={text} text={text} position={[x, y, 0.045]} />
+        <Plate key={text} text={text} position={[x, y - 0.03, DEPTH + 0.012]} />
       ))}
     </group>
   );
@@ -468,7 +468,7 @@ function WallShelf() {
 }
 
 function Poster() {
-  const map = useTexture("/work-kozzi.jpg");
+  const map = useTexture("/img/work-kozzi-sm.jpg");
   map.colorSpace = THREE.SRGBColorSpace;
   return (
     <group>
@@ -667,20 +667,20 @@ function Globe() {
   });
   return (
     <group>
-      <mesh position={[0, 0.015, 0]} castShadow>
-        <cylinderGeometry args={[0.07, 0.08, 0.03, 18]} />
+      <mesh position={[0, 0.02, 0]} castShadow>
+        <cylinderGeometry args={[0.1, 0.12, 0.04, 24]} />
         <meshStandardMaterial color="#b98a4a" metalness={0.4} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 0.07, 0]}>
-        <cylinderGeometry args={[0.008, 0.008, 0.1, 6]} />
+      <mesh position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.011, 0.011, 0.14, 8]} />
         <meshStandardMaterial color="#b98a4a" metalness={0.4} />
       </mesh>
-      <group position={[0, 0.2, 0]} rotation={[0, 0, 0.4]}>
+      <group position={[0, 0.32, 0]} rotation={[0, 0, 0.4]}>
         <group ref={spin}>
-          <Earth radius={0.12} map={map} pin={1.8} />
+          <Earth radius={0.19} map={map} pin={1.5} />
         </group>
         <mesh rotation={[0, Math.PI / 2, 0]}>
-          <torusGeometry args={[0.135, 0.006, 6, 32, Math.PI]} />
+          <torusGeometry args={[0.212, 0.008, 8, 40, Math.PI]} />
           <meshStandardMaterial color="#b98a4a" metalness={0.4} />
         </mesh>
       </group>
@@ -829,7 +829,7 @@ function Tube() {
 }
 
 const SCENE_ITEMS = {
-  about: () => <Frame src="/khizar.jpg" w={0.5} h={0.64} />,
+  about: () => <Frame src="/img/khizar-sm.jpg" w={0.5} h={0.64} />,
   poster: () => <Poster />,
   contact: () => (
     <group scale={0.34}>
@@ -905,7 +905,7 @@ function Rig() {
   return null;
 }
 
-function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect }) {
+function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect, onReady }) {
   const byId = useMemo(() => Object.fromEntries(hotspots.map((h) => [h.id, h])), [hotspots]);
   const work = hotspots.filter((h) => h.kind === "work");
   const lampOn = lampMode !== "off";
@@ -929,6 +929,7 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect }) 
   // The room barely moves, so redraw the shadow map every 8th frame, and every frame while a book flies.
   useFrame(({ gl }) => {
     frame.current += 1;
+    if (frame.current === 3) onReady?.();
     gl.shadowMap.autoUpdate = false;
     gl.shadowMap.needsUpdate = flyId !== null || frame.current < 3 || frame.current % 8 === 0;
   });
@@ -984,7 +985,7 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect }) 
       <Bookshelf />
       <WallShelf />
       <group position={[-1.55, 2.795, 0.14]}>
-        <Frame src="/work-event.jpg" w={0.42} h={0.52} />
+        <Frame src="/img/work-event-sm.jpg" w={0.42} h={0.52} />
       </group>
       <group position={[-1.12, 1.62, 0.01]}>
         <Postcard />
@@ -1025,7 +1026,7 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect }) 
   );
 }
 
-export default function StudioScene({ hotspots, clients, lampMode, activeId, onSelect, ready, paused }) {
+export default function StudioScene({ hotspots, clients, lampMode, activeId, onSelect, onReady, ready, paused }) {
   const [low, setLow] = useState(false); // the machine can't keep up: drop sharpness for speed
   return (
     <div className={`studio-canvas${ready ? " is-ready" : ""}`}>
@@ -1044,6 +1045,7 @@ export default function StudioScene({ hotspots, clients, lampMode, activeId, onS
           lampMode={lampMode}
           activeId={activeId}
           low={low}
+          onReady={onReady}
           onSelect={onSelect}
         />
       </Canvas>
