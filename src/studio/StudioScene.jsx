@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { PerformanceMonitor, RoundedBox, useTexture } from "@react-three/drei";
+import { Html, PerformanceMonitor, RoundedBox, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { PhoneModel } from "./PhoneDial.jsx";
+import { Earth, earthTexture } from "./Globe.jsx";
 
 // Layout: back wall is the z = 0 plane, floor is y = 0, everything faces +z.
 const YELLOW = "#ecc22a";
@@ -37,12 +38,30 @@ function canvasTexture(w, h, draw) {
   return tex;
 }
 
+/** Hover label, like "RÉSUMÉ" over a bay. */
+function Tag({ position, name, title }) {
+  return (
+    <Html position={position} center zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
+      <div className="studio-tag">
+        <b>{name}</b>
+        {title ? <span>{title}</span> : null}
+      </div>
+    </Html>
+  );
+}
+
+// A whole bay that acts as one button: a see-through hit box behind the items, and a label.
+const SECTIONS = {
+  resume: { name: "Résumé", box: { pos: [-0.275, 0.345, -0.19], size: [0.9, 0.72, 0.02] }, tag: [-0.45, 0.78, 0] },
+};
+
 function Clickable({ hotspot, onSelect, children, ...props }) {
   const [hover, setHover] = useState(false);
+  const section = SECTIONS[hotspot.id];
   return (
     <group
       position={hotspot.position}
-      scale={hover ? 1.05 : 1}
+      scale={hover && !section ? 1.05 : 1}
       onClick={(event) => {
         event.stopPropagation();
         if (event.delta > 8) return; // was a swipe, not a tap
@@ -60,9 +79,17 @@ function Clickable({ hotspot, onSelect, children, ...props }) {
       {...props}
     >
       {children}
+      {section ? (
+        <mesh position={section.box.pos}>
+          <boxGeometry args={section.box.size} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      ) : null}
+      {section && hover ? <Tag position={section.tag} name={section.name} /> : null}
     </group>
   );
 }
+
 
 const PICK = 2; // which book in a work row is the clickable one (a bit thicker and taller)
 
@@ -96,7 +123,7 @@ function BookBody({ w, bh, color, children }) {
 }
 
 /** Upright books starting at x = 0 on a shelf surface (y = 0). Book `pick` is clickable. */
-function Books({ colors, h = 0.62, lean = 0, seed = 0, pick = -1, hide = false, onPick }) {
+function Books({ colors, h = 0.62, lean = 0, seed = 0, pick = -1, hide = false, tag, onPick }) {
   const [hover, setHover] = useState(false);
   return (
     <group rotation={[0, 0, lean]}>
@@ -134,6 +161,7 @@ function Books({ colors, h = 0.62, lean = 0, seed = 0, pick = -1, hide = false, 
             }
           >
             <BookBody w={w} bh={bh} color={color} />
+            {mine && hover && tag ? <Tag position={[0, bh / 2 + 0.1, 0.2]} {...tag} /> : null}
           </group>
         );
       })}
@@ -293,12 +321,6 @@ function Bookshelf() {
       })}
 
       {/* Decorative fill so every bay feels lived in */}
-      <group position={[1.6, 0.66, 0]}>
-        <Books colors={fillColors(1, 6)} h={0.48} seed={2} />
-      </group>
-      <group position={[2.36, 1.63, 0]}>
-        <Books colors={fillColors(4, 4)} h={0.6} seed={5} />
-      </group>
       <group position={[3.3, 0.03, 0]}>
         <Books colors={fillColors(7, 8)} h={0.72} seed={1} />
       </group>
@@ -588,6 +610,11 @@ function Cat() {
 }
 
 function Globe() {
+  const spin = useRef();
+  const map = useMemo(() => earthTexture(1024), []);
+  useFrame((_, dt) => {
+    spin.current.rotation.y += dt * 0.6;
+  });
   return (
     <group>
       <mesh position={[0, 0.015, 0]} castShadow>
@@ -599,23 +626,9 @@ function Globe() {
         <meshStandardMaterial color="#b98a4a" metalness={0.4} />
       </mesh>
       <group position={[0, 0.2, 0]} rotation={[0, 0, 0.4]}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.12, 28, 20]} />
-          <meshStandardMaterial color="#4f7fa8" roughness={0.5} />
-        </mesh>
-        {[[0.5, 0.4], [-0.6, -0.2], [2.2, 0.1], [3.4, -0.5]].map(([lon, lat]) => (
-          <mesh
-            key={lon}
-            position={[
-              Math.cos(lat) * Math.sin(lon) * 0.113,
-              Math.sin(lat) * 0.113,
-              Math.cos(lat) * Math.cos(lon) * 0.113,
-            ]}
-          >
-            <sphereGeometry args={[0.035, 10, 8]} />
-            <meshStandardMaterial color="#9bbf74" roughness={0.6} />
-          </mesh>
-        ))}
+        <group ref={spin}>
+          <Earth radius={0.12} map={map} pin={1.8} />
+        </group>
         <mesh rotation={[0, Math.PI / 2, 0]}>
           <torusGeometry args={[0.135, 0.006, 6, 32, Math.PI]} />
           <meshStandardMaterial color="#b98a4a" metalness={0.4} />
@@ -742,7 +755,14 @@ const SCENE_ITEMS = {
       <PhoneModel />
     </group>
   ),
-  resume: () => <Tube />,
+  resume: () => (
+    <>
+      <Tube />
+      <group position={[-0.69, 0, -0.24]}>
+        <Books colors={fillColors(4, 4)} h={0.6} seed={5} />
+      </group>
+    </>
+  ),
   chess: () => <Chess />,
   globe: () => <Globe />,
   cat: () => <Cat />,
@@ -891,6 +911,7 @@ function SceneContent({ hotspots, clients, lampMode, activeId, low, onSelect }) 
           <Books
             {...rowProps(hotspot)}
             pick={PICK}
+            tag={{ name: hotspot.section, title: hotspot.project?.title }}
             hide={hotspot.id === flyId}
             onPick={() => onSelect(hotspot.id)}
           />

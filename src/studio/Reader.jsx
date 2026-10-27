@@ -24,7 +24,7 @@ function Words({ page, link }) {
         </dl>
       ) : null}
       {page.list ? (
-        <ul className="reader__list">
+        <ul className={`reader__list${page.list.length > 8 ? " reader__list--cols" : ""}`}>
           {page.list.map((item) => (
             <li key={item}>{item}</li>
           ))}

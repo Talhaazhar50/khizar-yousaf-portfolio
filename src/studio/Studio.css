@@ -1071,3 +1071,86 @@ a.studio-menu__item {
     animation-delay: 0.3s;
   }
 }
+
+/* Hover label over a shelf section (RÉSUMÉ, WORK, CV) */
+.studio-canvas {
+  isolation: isolate;
+}
+
+.studio-tag {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.35rem 0.85rem;
+  border: 3px solid #2a1f16;
+  border-radius: 999px;
+  background: #f2c14e;
+  color: #2a1f16;
+  font-family: var(--studio-body);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.studio-tag b {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.studio-tag span {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* Globe panel */
+.studio-phone__stage--globe {
+  cursor: grab;
+}
+
+.studio-phone__stage--globe canvas {
+  touch-action: none;
+}
+
+.studio-places {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.studio-places button {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--studio-line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--studio-ink);
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-places button i {
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: #e8481c;
+}
+
+.studio-places button:hover,
+.studio-places button.is-on {
+  border-color: var(--studio-gold);
+  color: var(--studio-gold);
+}
+
+.reader__list--cols {
+  columns: 2;
+  column-gap: 1.5rem;
+}

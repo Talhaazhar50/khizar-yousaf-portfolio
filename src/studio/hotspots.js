@@ -75,9 +75,9 @@ export const STATIC_HOTSPOTS = [
   },
   {
     id: "globe",
-    label: "Where I’ve worked",
+    label: "Where I’ve been",
     group: "Play",
-    kind: "mug",
+    kind: "globe",
     discoverable: true,
     hint: "The little globe on the shelf",
     position: [2.95, 0.83, 0.24],
@@ -229,6 +229,7 @@ export function projectsToHotspots(projects) {
     kind: "work",
     discoverable: true,
     hint: "The thicker book standing out on the yellow shelf",
+    section: "Work",
     position: BOOK_SLOTS[index].position,
     book: BOOK_SLOTS[index],
     project,
@@ -296,3 +297,75 @@ export function dummyPages(project) {
   ];
   return copy.map((page, i) => ({ ...page, image: i === 0 ? project.image : pics[(i - 1) % pics.length] }));
 }
+
+/** Where the work has happened: the pins on the globe. Australia is pinned on Sydney. */
+export const PLACES = [
+  { id: "lahore", name: "Lahore", country: "Pakistan", lat: 31.5497, lon: 74.3436 },
+  { id: "dubai", name: "Dubai", country: "UAE", lat: 25.2048, lon: 55.2708 },
+  { id: "newyork", name: "New York", country: "USA", lat: 40.7128, lon: -74.006 },
+  { id: "sydney", name: "Sydney", country: "Australia", lat: -33.8688, lon: 151.2093 },
+];
+
+/** The CV is a book on the shelf too, built from the About, Skills and Contact data above. */
+const CV_PROJECT = {
+  id: "cv",
+  title: "Curriculum Vitae",
+  tag: "Experience, skills and contact",
+  category: "CV",
+  image: "/khizar.jpg",
+  pages: [
+    {
+      eyebrow: "Curriculum vitae",
+      title: "Khizar Yousaf",
+      body: ABOUT.body,
+      meta: [
+        ["Role", "Graphic designer and social media manager"],
+        ["Experience", `${ABOUT.stats[0].value} years`],
+        ["Based in", "Lahore, Pakistan"],
+      ],
+      image: "/khizar.jpg",
+    },
+    {
+      eyebrow: "Experience",
+      title: "Where I’ve worked",
+      body: "Roles, newest first.",
+      list: ABOUT.jobs.map((job) => `${job.role}, ${job.org} (${job.dates})`),
+      image: "/work-social.jpg",
+    },
+    {
+      eyebrow: "Skills",
+      title: "Tools and craft",
+      body: "What I use every week.",
+      list: SKILLS,
+      image: "/work-brandboard.jpg",
+    },
+    {
+      eyebrow: "Contact",
+      title: "Let’s work together",
+      body: "Branding, social systems, campaigns, or print. Tell me what you need.",
+      meta: [
+        ["Email", CONTACT.email],
+        ["Phone", CONTACT.phone],
+        ["LinkedIn", "linkedin.com/in/khizar-yousuf-749592229"],
+      ],
+      image: "/work-kozzi.jpg",
+    },
+  ],
+};
+
+export const CV_HOTSPOT = {
+  id: "cv",
+  label: "Curriculum Vitae",
+  group: "About",
+  kind: "work",
+  discoverable: true,
+  hint: "The book in the middle bay of the left shelf",
+  section: "CV",
+  position: [1.6, 0.66, 0],
+  book: {
+    position: [1.6, 0.66, 0],
+    colors: ["#e9dcc0", "#a9c79a", "#e8b77a", "#7f8f6a", "#b5574b", "#c98a5e"],
+    h: 0.48,
+  },
+  project: CV_PROJECT,
+};

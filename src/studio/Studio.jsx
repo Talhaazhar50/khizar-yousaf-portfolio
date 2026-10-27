@@ -4,8 +4,10 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ABOUT,
   CONTACT,
+  CV_HOTSPOT,
   FALLBACK_CLIENTS,
   FALLBACK_PROJECTS,
+  PLACES,
   STATIC_HOTSPOTS,
   SKILLS,
   projectsToHotspots,
@@ -15,6 +17,7 @@ import "./Studio.css";
 
 const StudioScene = lazy(() => import("./StudioScene.jsx"));
 const PhoneDial = lazy(() => import("./PhoneDial.jsx"));
+const GlobeView = lazy(() => import("./Globe.jsx"));
 
 const DISCOVER_KEY = "khizar_studio_discovered_v1";
 const LAMP_MODES = ["warm", "cool", "off"];
@@ -58,11 +61,12 @@ export default function Studio() {
   const [booksUp, setBooksUp] = useState(0);
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState("");
+  const [place, setPlace] = useState(null); // the pin the globe is turning to
   const [dial, setDial] = useState(null); // {n, id}: a number the phone is dialling
 
   const workHotspots = useMemo(() => projectsToHotspots(projects), [projects]);
   const hotspots = useMemo(
-    () => [...STATIC_HOTSPOTS, ...workHotspots],
+    () => [...STATIC_HOTSPOTS, ...workHotspots, CV_HOTSPOT],
     [workHotspots]
   );
   const discoverable = useMemo(
@@ -131,6 +135,11 @@ export default function Studio() {
   }, [reduce]);
 
   const phoneOpen = active?.kind === "contact";
+  const wide = phoneOpen || active?.kind === "globe";
+
+  useEffect(() => {
+    if (active?.kind !== "globe") setPlace(null);
+  }, [active?.kind]);
 
   // Freeze the 3D room whenever something covers it, so the page on top gets the whole main thread.
   // A book is the exception while it flies out (and back): the room has to draw that.
@@ -428,7 +437,7 @@ export default function Studio() {
               onClick={() => setActiveId(null)}
             />
             <motion.aside
-              className={`studio-panel${phoneOpen ? " studio-panel--phone" : ""}`}
+              className={`studio-panel${wide ? " studio-panel--phone" : ""}`}
               role="dialog"
               aria-modal="true"
               aria-label={active.label}
@@ -555,6 +564,32 @@ export default function Studio() {
                   <a className="studio-cta" href={CONTACT.resume} download>
                     Download résumé
                   </a>
+                </div>
+              ) : null}
+
+              {active.kind === "globe" ? (
+                <div className="studio-panel__body studio-phone">
+                  <div className="studio-phone__stage studio-phone__stage--globe">
+                    <Suspense fallback={null}>
+                      <GlobeView focus={place} />
+                    </Suspense>
+                  </div>
+                  <div className="studio-phone__side">
+                    <p>Places I have worked from. Drag the globe, or pick a pin.</p>
+                    <div className="studio-places">
+                      {PLACES.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={place === p.id ? "is-on" : ""}
+                          onClick={() => setPlace(p.id)}
+                        >
+                          <i aria-hidden="true" />
+                          {p.name}, {p.country}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : null}
 
